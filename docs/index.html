@@ -122,7 +122,9 @@ Loading older messages…
           "Sign in failed: " + error.message;
       }
     });
-
+catch (error) {
+    status.textContent = "SDK initialization error.";
+  }
   } 
   document.getElementById("checkBalance").addEventListener("click", async function () {
   const result = document.getElementById("balanceResult");

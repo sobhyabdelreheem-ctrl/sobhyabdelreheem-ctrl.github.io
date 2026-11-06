@@ -123,10 +123,30 @@ Loading older messages…
       }
     });
 
+  } 
+  document.getElementById("checkBalance").addEventListener("click", async function () {
+  const result = document.getElementById("balanceResult");
+  result.textContent = "جارٍ الاتصال بشبكة Mainnet...";
+
+  const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
+
+  try {
+    const response = await fetch(
+      "https://api.mainnet.minepi.com/claimable_balances/" + balanceId
+    );
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    result.textContent =
+      "تم الاتصال بنجاح. الرصيد: " + data.amount + " Pi";
   } catch (error) {
-    status.textContent = "SDK initialization error.";
+    result.textContent = "تعذر الاتصال: " + error.message;
   }
-  
+});
 </script>
 </body>
 </html>

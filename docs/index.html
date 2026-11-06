@@ -27,71 +27,11 @@
   <p id="status">Pi SDK detected.</p>
   <button id="login">Sign in with Pi</button>
   <p id="result"></p>
-
   <button id="checkBalance">اختبار قراءة رصيد Mainnet</button>
 <p id="balanceResult"></p>
 </main>
-<script>
-  
-Loading older messages…
-العنوان فقط ولا يوجد أي شئ اخر
-كده عرفنا أن الصفحة تعرض جزءًا من المحتوى فقط. الاحتمال الأقرب أن الملف لم يُحفظ فيه الكود كاملًا، أو أن جزءًا منه لم يصل أثناء النسخ.
 
-خلينا نراجع الملف بدل ما نبدأ من جديد.
-
-الخطوة التالية
-ارجع إلى مستودع GitHub باسم wallet-monitor.
-
-اضغط على ملف index.html.
-
-اضغط علامة القلم Edit.
-
-ابحث عن السطر الذي يحتوي على:
-
-<h2>Wallet Monitor</h2>
-
-5. انظر إلى السطر الذي يليه مباشرة.
-
-اكتب لي ما تجده بعد هذا السطر، ولا تعدّل أو تحفظ أي شيء الآن.
-
-سنصلح الملف من الهاتف خطوة خطوة.
-
-<main>
-    <h2>Wallet Monitor</h2>
-    <p>Pi Testnet SDK Connection Test</p>
-    <p id="status">Checking SDK...</p>
-  </main>
-ممتاز، الجزء الذي أرسلته صحيح، وفيه بالفعل السطران اللذان يفترض أن يظهرا أسفل العنوان.
-
-إذن لا نحتاج إلى تعديل هذا الجزء.
-
-نريد الآن فحص الجزء الأخير من الملف:
-
-انزل بعد السطر:
-
-</main>
-
-وانسخ لي بقية الكود، خصوصًا الجزء الذي يبدأ بـ:
-
-<script>
-
-ولا تضغط Commit changes أو تعدّل أي شيء الآن. سنحدد سبب المشكلة أولًا.
-
-<script>
-    const status = document.getElementById("status");
-
-    try {
-      if (window.Pi) {
-        Pi.init({ version: "2.0", sandbox: true });
-        status.textContent = "Pi SDK detected. Initialization requested.";
-      } else {
-        status.textContent = "Pi SDK not detected yet.";
-      }
-    } catch (error) {
-      status.textContent = "SDK initialization error.";
-    }
-
-  
+  <script>
   const status = document.getElementById("status");
   const loginButton = document.getElementById("login");
   const result = document.getElementById("result");
@@ -122,11 +62,11 @@ Loading older messages…
           "Sign in failed: " + error.message;
       }
     });
-catch (error) {
+
+  } catch (error) {
     status.textContent = "SDK initialization error.";
   }
-  } 
-  document.getElementById("checkBalance").addEventListener("click", async function () {
+    document.getElementById("checkBalance").addEventListener("click", async function () {
   const result = document.getElementById("balanceResult");
   result.textContent = "جارٍ الاتصال بشبكة Mainnet...";
 

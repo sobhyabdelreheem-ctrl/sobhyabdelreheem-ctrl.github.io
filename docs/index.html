@@ -185,31 +185,73 @@
         memo: "Transfer to target wallet: " + targetWallet,
         metadata: { receiver: targetWallet },
       }, {
-        onReadyForServerApproval: async function(paymentId) {
-          paymentResult.textContent = "قيد الموافقة من السيرفر (Payment ID: " + paymentId + ")";
-          try {
-            await fetch(SERVER_URL + "/approve", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId: paymentId })
-            });
-          } catch (err) {
-            console.error("Approval error:", err);
-          }
-        },
-        onReadyForServerCompletion: async function(paymentId, txid) {
-          paymentResult.textContent = "جاري إتمام المعاملة نهائياً عبر السيرفر...";
-          try {
-            await fetch(SERVER_URL + "/complete", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ paymentId: paymentId, txid: txid })
-            });
-            paymentResult.textContent = "تم إتمام التحويل بنجاح!\nمعرف المعاملة (TXID): " + txid;
-          } catch (err) {
-            paymentResult.textContent = "تم التحويل ولكن حدث خطأ في إرسال التأكيد للسيرفر: " + err.message;
-          }
-        },
+    
+onReadyForServerApproval: async function(paymentId) {
+  paymentResult.textContent = "جاري اعتماد الدفع من السيرفر...";
+
+  try {
+    const response = await fetch(SERVER_URL + "/approve", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ paymentId })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(JSON.stringify(data.error));
+    }
+
+    paymentResult.textContent =
+      "تمت الموافقة على الدفع بنجاح. في انتظار تأكيد المعاملة.";
+
+  } catch (err) {
+    paymentResult.textContent =
+      "تعذرت الموافقة على الدفع: " + err.message;
+
+    console.error("Approval error:", err);
+  }
+},
+
+        
+onReadyForServerCompletion: async function(paymentId, txid) {
+  paymentResult.textContent =
+    "جاري إتمام المعاملة والتحقق منها...";
+
+  try {
+    const response = await fetch(SERVER_URL + "/complete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        paymentId: paymentId,
+        txid: txid
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(JSON.stringify(data.error));
+    }
+
+    paymentResult.textContent =
+      "تم إتمام الدفع بنجاح وتأكيده من Pi Network!" +
+      "\nTXID: " + txid;
+
+  } catch (err) {
+    paymentResult.textContent =
+      "لم يتم تأكيد إتمام الدفع من السيرفر." +
+      "\nيرجى عدم اعتبار العملية مكتملة حتى يتم التحقق منها." +
+      "\nالتفاصيل: " + err.message;
+
+    console.error("Completion error:", err);
+  }
+},
+
         onCancel: function(paymentId) {
           paymentResult.textContent = "تم إلغاء عملية الدفع من قبل المستخدم.";
         },

@@ -58,7 +58,7 @@
   <p>Pi Testnet Balance Monitor</p>
   <p id="status">جاري تهيئة Pi SDK...</p>
 
-  <button id="login">Sign in with Pi</button>
+  <button id="login">تسجيل الدخول وطلب الصلاحيات</button>
   <p id="result">لم يتم تسجيل الدخول بعد</p>
 
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
@@ -88,21 +88,24 @@
     status.textContent = "SDK initialization error: " + error.message;
   }
 
-  // تم إضافة "payments" هنا لصلاحية الدفع والتحويل
-  document.getElementById("login").addEventListener("click", async function () {
-    result.textContent = "جاري تسجيل الدخول...";
+  // دالة تسجيل الدخول مع طلب صلاحيات المدفوعات بقوة
+  async function handleLogin() {
+    result.textContent = "جاري طلب المصادقة والصلاحيات...";
     try {
       const auth = await Pi.authenticate(
         ["username", "payments"],
-        function (payment) {
-          console.log("Incomplete payment:", payment);
+        function onIncompletePaymentFound(payment) {
+          console.log("Incomplete payment found:", payment);
+          paymentResult.textContent = "تم العثور على عملية دفع غير مكتملة: " + payment.identifier;
         }
       );
-      result.textContent = "مرحباً بك، " + auth.user.username;
+      result.textContent = "مرحباً بك، " + auth.user.username + " (تم منح صلاحية المدفوعات بنجاح)";
     } catch (error) {
       result.textContent = "فشل تسجيل الدخول: " + error.message;
     }
-  });
+  }
+
+  document.getElementById("login").addEventListener("click", handleLogin);
 
   const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
   const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
@@ -170,6 +173,7 @@
   checkBalance();
   setInterval(checkBalance, 15000);
 
+  // تنفيذ طلب الدفع والتحويل
   document.getElementById("sendPi").addEventListener("click", async function () {
     paymentResult.textContent = "جاري إنشاء طلب الدفع...";
 

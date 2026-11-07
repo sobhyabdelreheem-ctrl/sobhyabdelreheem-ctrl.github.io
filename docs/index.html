@@ -104,6 +104,7 @@ let checkCount = 0;
       }
 
       const data = await response.json();
+        checkCount++;
 
       const claimant = data.claimants.find(
         item => item.destination === oldWallet
@@ -125,7 +126,7 @@ let checkCount = 0;
       const unlocked =
         Date.now() >= new Date(unlockDate).getTime();
 
-      balanceResult.textContent =
+      balanceResult.textContent ="عدد مرات الفحص: " + checkCount +
         "آخر فحص: " + new Date().toLocaleTimeString("ar-EG") +
         "\nالرصيد: " + data.amount + " Pi" +
         "\nالحالة: " +

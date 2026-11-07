@@ -82,8 +82,8 @@
   const oldWallet =
     "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
 
-  let checking = false;
-
+let checking = false;
+let checkCount = 0;
   async function checkBalance() {
     if (checking) return;
     checking = true;

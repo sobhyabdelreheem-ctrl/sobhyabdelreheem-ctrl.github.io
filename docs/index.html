@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Wallet Monitor</title>
+  <title>Wallet Monitor & Transfer</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body {
@@ -19,50 +18,80 @@
       border-radius: 12px;
       max-width: 600px;
       margin: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     button {
-      padding: 12px;
+      padding: 12px 20px;
       margin: 10px;
-      font-size: 17px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: #007bff;
+      color: white;
+      transition: background 0.3s;
     }
-    #balanceResult {
+    button:hover {
+      background-color: #0056b3;
+    }
+    #sendPi {
+      background-color: #7b1fa2;
+    }
+    #sendPi:hover {
+      background-color: #4a148c;
+    }
+    #balanceResult, #result, #paymentResult {
       white-space: pre-line;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1.8;
       overflow-wrap: anywhere;
+      margin-top: 15px;
+      padding: 10px;
+      background: #fafafa;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
 <main>
-  <h2>Wallet Monitor</h2>
-  <p>Pi Mainnet Balance Monitor</p>
+  <h2>Wallet Monitor & Transfer</h2>
+  <p>Pi Testnet / Mainnet Balance Monitor</p>
   <p id="status">جاري تهيئة Pi SDK...</p>
 
   <button id="login">Sign in with Pi</button>
-  <p id="result"></p>
+  <p id="result">لم يتم تسجيل الدخول بعد</p>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
 
   <button id="checkBalance">فحص الرصيد الآن</button>
   <p id="balanceResult">في انتظار الفحص...</p>
+
+  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+
+  <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
+  <p id="paymentResult">جاهز لعملية التحويل...</p>
 </main>
 
 <script>
   const status = document.getElementById("status");
   const result = document.getElementById("result");
   const balanceResult = document.getElementById("balanceResult");
+  const paymentResult = document.getElementById("paymentResult");
 
+  // تهيئة Pi SDK
   try {
     Pi.init({
       version: "2.0",
-      sandbox: true
+      sandbox: true // اجعلها false إذا كنت تعمل على الشبكة الرئيسية Mainnet
     });
     status.textContent = "Pi SDK initialized successfully.";
   } catch (error) {
     status.textContent = "SDK initialization error: " + error.message;
   }
 
+  // تسجيل الدخول
   document.getElementById("login").addEventListener("click", async function () {
-    result.textContent = "Signing in...";
+    result.textContent = "جاري تسجيل الدخول...";
     try {
       const auth = await Pi.authenticate(
         ["username"],
@@ -70,20 +99,20 @@
           console.log("Incomplete payment:", payment);
         }
       );
-      result.textContent = "Welcome, " + auth.user.username;
+      result.textContent = "مرحباً بك، " + auth.user.username;
     } catch (error) {
-      result.textContent = "Sign in failed: " + error.message;
+      result.textContent = "فشل تسجيل الدخول: " + error.message;
     }
   });
 
-  const balanceId =
-    "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
+  const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
+  const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
+  const targetWallet = "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
 
-  const oldWallet =
-    "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
+  let checking = false;
+  let checkCount = 0;
 
-let checking = false;
-let checkCount = 0;
+  // دالة فحص الرصيد
   async function checkBalance() {
     if (checking) return;
     checking = true;
@@ -94,8 +123,7 @@ let checkCount = 0;
       );
 
       if (response.status === 404) {
-        balanceResult.textContent =
-          "الرصيد غير موجود حاليًا أو تمت المطالبة به.";
+        balanceResult.textContent = "الرصيد غير موجود حاليًا أو تمت المطالبة به.";
         return;
       }
 
@@ -104,51 +132,75 @@ let checkCount = 0;
       }
 
       const data = await response.json();
-        checkCount++;
+      checkCount++;
 
       const claimant = data.claimants.find(
         item => item.destination === oldWallet
       );
 
       if (!claimant) {
-        balanceResult.textContent = "المستفيد غير موجود.";
+        balanceResult.textContent = "المستفيد غير موجود في هذه القائمة.";
         return;
       }
 
-      const unlockDate =
-        claimant.predicate?.not?.abs_before;
+      const unlockDate = claimant.predicate?.not?.abs_before;
 
       if (!unlockDate) {
         balanceResult.textContent = "تعذر قراءة موعد فك القفل.";
         return;
       }
 
-      const unlocked =
-        Date.now() >= new Date(unlockDate).getTime();
+      const unlocked = Date.now() >= new Date(unlockDate).getTime();
 
-      balanceResult.textContent ="عدد مرات الفحص: " + checkCount +
-        "آخر فحص: " + new Date().toLocaleTimeString("ar-EG") +
+      balanceResult.textContent = 
+        "عدد مرات الفحص: " + checkCount +
+        "\nآخر فحص: " + new Date().toLocaleTimeString("ar-EG") +
         "\nالرصيد: " + data.amount + " Pi" +
-        "\nالحالة: " +
-        (unlocked ? "تحقق الشرط الزمني للمطالبة" : "ما زال مقفلاً") +
-        "\nموعد فك القفل: " +
-        new Date(unlockDate).toLocaleString("ar-EG") +
+        "\nالحالة: " + (unlocked ? "تحقق الشرط الزمني للمطالبة" : "ما زال مقفلاً") +
+        "\nموعد فك القفل: " + new Date(unlockDate).toLocaleString("ar-EG") +
         "\nالفحص التالي بعد 15 ثانية.";
 
     } catch (error) {
-      balanceResult.textContent =
-        "تعذر تحديث البيانات: " + error.message;
+      balanceResult.textContent = "تعذر تحديث البيانات: " + error.message;
     } finally {
       checking = false;
     }
   }
 
-  document.getElementById("checkBalance").addEventListener(
-    "click", checkBalance
-  );
+  document.getElementById("checkBalance").addEventListener("click", checkBalance);
 
+  // تشغيل الفحص التلقائي
   checkBalance();
   setInterval(checkBalance, 15000);
+
+  // تفعيل زر تحويل / دفع العملات عبر Pi SDK
+  document.getElementById("sendPi").addEventListener("click", async function () {
+    paymentResult.textContent = "جاري إنشاء طلب الدفع...";
+
+    try {
+      const payment = Pi.createPayment({
+        amount: 1.0, // المبلغ المراد تحويله
+        memo: "Transfer to target wallet: " + targetWallet,
+        metadata: { receiver: targetWallet },
+      }, {
+        onReadyForServerApproval: function(paymentId) {
+          paymentResult.textContent = "قيد الموافقة (Payment ID: " + paymentId + ")";
+          // ملاحظة: في بيئة الإنتاج الحقيقية، تحتاج لإرسال paymentId إلى سيرفرك لتأكيد المعاملة
+        },
+        onReadyForServerCompletion: function(paymentId, txid) {
+          paymentResult.textContent = "تم إتمام التحويل بنجاح!\nمعرف المعاملة (TXID): " + txid;
+        },
+        onCancel: function(paymentId) {
+          paymentResult.textContent = "تم إلغاء عملية الدفع من قبل المستخدم.";
+        },
+        onError: function(error, payment) {
+          paymentResult.textContent = "حدث خطأ أثناء الدفع: " + error.message;
+        }
+      });
+    } catch (error) {
+      paymentResult.textContent = "فشل بدء عملية الدفع: " + error.message;
+    }
+  });
 </script>
 </body>
 </html>

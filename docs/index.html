@@ -186,34 +186,51 @@
         metadata: { receiver: targetWallet },
       }, {
     
+
 onReadyForServerApproval: async function(paymentId) {
-  paymentResult.textContent = "جاري اعتماد الدفع من السيرفر...";
+
+  paymentResult.textContent =
+    "جاري انتظار موافقة Pi Network...";
 
   try {
+
     const response = await fetch(SERVER_URL + "/approve", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ paymentId })
+      body: JSON.stringify({
+        paymentId: paymentId
+      })
     });
 
     const data = await response.json();
 
+    console.log("Approval response:", data);
+
     if (!response.ok || !data.success) {
-      throw new Error(JSON.stringify(data.error));
+      throw new Error(
+        data.error
+          ? JSON.stringify(data.error)
+          : "Server approval failed"
+      );
     }
 
     paymentResult.textContent =
-      "تمت الموافقة على الدفع بنجاح. في انتظار تأكيد المعاملة.";
+      "تمت موافقة السيرفر بنجاح." +
+      "\nيمكنك الآن مراجعة الدفع وإدخال كلمة مرور المحفظة.";
 
-  } catch (err) {
+  } catch (error) {
+
+    console.error("Approval error:", error);
+
     paymentResult.textContent =
-      "تعذرت الموافقة على الدفع: " + err.message;
+      "لم تتم موافقة السيرفر بعد." +
+      "\nسبب الخطأ: " + error.message;
 
-    console.error("Approval error:", err);
   }
 },
+
 
         
 onReadyForServerCompletion: async function(paymentId, txid) {

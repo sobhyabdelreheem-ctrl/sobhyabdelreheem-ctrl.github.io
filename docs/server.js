@@ -9,7 +9,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(cors());
 
 // احتفظ بمفتاح API الحالي في نسختك مؤقتاضع قيمة مفتاحك الحالي هنا
-st PI_API_KEY = "sdpztt1hw2jgpnyqkxp91kzyiqbldv5qz6sbgvqp6z4pq9rn7ozvnmlgmazcnodw";
+const PI_API_KEY = "sdpztt1hw2jgpnyqkxp91kzyiqbldv5qz6sbgvqp6z4pq9rn7ozvnmlgmazcnodw";
 
 const PI_API_BASE = 'https://api.minepi.com/v2';
 

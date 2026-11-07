@@ -73,6 +73,9 @@
 </main>
 
 <script>
+  // رابط سيرفرك المباشر على Vercel
+  const SERVER_URL = "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
+
   const status = document.getElementById("status");
   const result = document.getElementById("result");
   const balanceResult = document.getElementById("balanceResult");
@@ -88,7 +91,7 @@
     status.textContent = "SDK initialization error: " + error.message;
   }
 
-  // دالة تسجيل الدخول مع طلب صلاحيات المدفوعات بقوة
+  // تسجيل الدخول وطلب الصلاحيات
   async function handleLogin() {
     result.textContent = "جاري طلب المصادقة والصلاحيات...";
     try {
@@ -169,11 +172,10 @@
   }
 
   document.getElementById("checkBalance").addEventListener("click", checkBalance);
-
   checkBalance();
   setInterval(checkBalance, 15000);
 
-  // تنفيذ طلب الدفع والتحويل
+  // تنفيذ طلب الدفع والتحويل مع ربطه بالسيرفر
   document.getElementById("sendPi").addEventListener("click", async function () {
     paymentResult.textContent = "جاري إنشاء طلب الدفع...";
 
@@ -183,11 +185,30 @@
         memo: "Transfer to target wallet: " + targetWallet,
         metadata: { receiver: targetWallet },
       }, {
-        onReadyForServerApproval: function(paymentId) {
-          paymentResult.textContent = "قيد الموافقة (Payment ID: " + paymentId + ")";
+        onReadyForServerApproval: async function(paymentId) {
+          paymentResult.textContent = "قيد الموافقة من السيرفر (Payment ID: " + paymentId + ")";
+          try {
+            await fetch(SERVER_URL + "/approve", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId: paymentId })
+            });
+          } catch (err) {
+            console.error("Approval error:", err);
+          }
         },
-        onReadyForServerCompletion: function(paymentId, txid) {
-          paymentResult.textContent = "تم إتمام التحويل بنجاح!\nمعرف المعاملة (TXID): " + txid;
+        onReadyForServerCompletion: async function(paymentId, txid) {
+          paymentResult.textContent = "جاري إتمام المعاملة نهائياً عبر السيرفر...";
+          try {
+            await fetch(SERVER_URL + "/complete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ paymentId: paymentId, txid: txid })
+            });
+            paymentResult.textContent = "تم إتمام التحويل بنجاح!\nمعرف المعاملة (TXID): " + txid;
+          } catch (err) {
+            paymentResult.textContent = "تم التحويل ولكن حدث خطأ في إرسال التأكيد للسيرفر: " + err.message;
+          }
         },
         onCancel: function(paymentId) {
           paymentResult.textContent = "تم إلغاء عملية الدفع من قبل المستخدم.";

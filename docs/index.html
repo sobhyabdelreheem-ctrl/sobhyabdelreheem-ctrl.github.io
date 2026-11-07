@@ -68,7 +68,6 @@
 
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
 
-  <!-- زر التحويل الجديد -->
   <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
   <p id="paymentResult">جاهز لعملية التحويل...</p>
 </main>
@@ -89,11 +88,12 @@
     status.textContent = "SDK initialization error: " + error.message;
   }
 
+  // تم إضافة "payments" هنا لصلاحية الدفع والتحويل
   document.getElementById("login").addEventListener("click", async function () {
     result.textContent = "جاري تسجيل الدخول...";
     try {
       const auth = await Pi.authenticate(
-        ["username"],
+        ["username", "payments"],
         function (payment) {
           console.log("Incomplete payment:", payment);
         }
@@ -170,7 +170,6 @@
   checkBalance();
   setInterval(checkBalance, 15000);
 
-  // تفعيل زر تحويل العملات عبر Pi SDK
   document.getElementById("sendPi").addEventListener("click", async function () {
     paymentResult.textContent = "جاري إنشاء طلب الدفع...";
 

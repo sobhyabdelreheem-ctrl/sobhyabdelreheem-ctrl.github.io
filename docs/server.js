@@ -9,6 +9,7 @@ app.use(cors());
 // ضع هنا مفتاح API الخاص بالمطور (Server API Key) من بوابة مطوري Pi
 const PI_API_KEY = "l9dbauvritxvqqrisylenvsnakwl77pgkgvhhfc8dowddqd4orlwjk6tpfreggob"; 
 
+
 // 1. مسار الموافقة على الدفع (Server Approval)
 app.post('/approve', async (req, pRes) => {
   const { paymentId } = req.body;
@@ -71,3 +72,13 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
+
+
+
+const express = require('express');
+const fetch = require('node-fetch');
+const cors = require('cors');
+
+const app = express();
+app.use(express.json());
+app.use(cors());

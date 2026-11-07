@@ -55,7 +55,7 @@
 <body>
 <main>
   <h2>Wallet Monitor & Transfer</h2>
-  <p>Pi Testnet / Mainnet Balance Monitor</p>
+  <p>Pi Testnet Balance Monitor</p>
   <p id="status">جاري تهيئة Pi SDK...</p>
 
   <button id="login">Sign in with Pi</button>
@@ -68,6 +68,7 @@
 
   <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
 
+  <!-- زر التحويل الجديد -->
   <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
   <p id="paymentResult">جاهز لعملية التحويل...</p>
 </main>
@@ -78,18 +79,16 @@
   const balanceResult = document.getElementById("balanceResult");
   const paymentResult = document.getElementById("paymentResult");
 
-  // تهيئة Pi SDK
   try {
     Pi.init({
       version: "2.0",
-      sandbox: true // اجعلها false إذا كنت تعمل على الشبكة الرئيسية Mainnet
+      sandbox: true
     });
     status.textContent = "Pi SDK initialized successfully.";
   } catch (error) {
     status.textContent = "SDK initialization error: " + error.message;
   }
 
-  // تسجيل الدخول
   document.getElementById("login").addEventListener("click", async function () {
     result.textContent = "جاري تسجيل الدخول...";
     try {
@@ -112,7 +111,6 @@
   let checking = false;
   let checkCount = 0;
 
-  // دالة فحص الرصيد
   async function checkBalance() {
     if (checking) return;
     checking = true;
@@ -169,23 +167,21 @@
 
   document.getElementById("checkBalance").addEventListener("click", checkBalance);
 
-  // تشغيل الفحص التلقائي
   checkBalance();
   setInterval(checkBalance, 15000);
 
-  // تفعيل زر تحويل / دفع العملات عبر Pi SDK
+  // تفعيل زر تحويل العملات عبر Pi SDK
   document.getElementById("sendPi").addEventListener("click", async function () {
     paymentResult.textContent = "جاري إنشاء طلب الدفع...";
 
     try {
       const payment = Pi.createPayment({
-        amount: 1.0, // المبلغ المراد تحويله
+        amount: 1.0,
         memo: "Transfer to target wallet: " + targetWallet,
         metadata: { receiver: targetWallet },
       }, {
         onReadyForServerApproval: function(paymentId) {
           paymentResult.textContent = "قيد الموافقة (Payment ID: " + paymentId + ")";
-          // ملاحظة: في بيئة الإنتاج الحقيقية، تحتاج لإرسال paymentId إلى سيرفرك لتأكيد المعاملة
         },
         onReadyForServerCompletion: function(paymentId, txid) {
           paymentResult.textContent = "تم إتمام التحويل بنجاح!\nمعرف المعاملة (TXID): " + txid;

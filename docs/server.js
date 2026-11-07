@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // ضع هنا مفتاح API الخاص بالمطور (Server API Key) من بوابة مطوري Pi
-const PI_API_KEY = "62h5kkg1qwa4o7utg6qbbutpsaic3fhlvx3k2nqoxuopottl1tuztiire9wqbkht"; 
+const PI_API_KEY = "l9dbauvritxvqqrisylenvsnakwl77pgkgvhhfc8dowddqd4orlwjk6tpfreggob"; 
 
 // 1. مسار الموافقة على الدفع (Server Approval)
 app.post('/approve', async (req, pRes) => {

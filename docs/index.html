@@ -116,7 +116,7 @@
     result.textContent = "جاري طلب المصادقة والصلاحيات...";
     try {
       const auth = await Pi.authenticate(
-        ["username", "payments"],
+            ["username", "payments", "wallet_address"],
         function onIncompletePaymentFound(payment) {
           console.log("Incomplete payment found:", payment);
           paymentResult.textContent = "تم العثور على عملية دفع غير مكتملة: " + payment.identifier;

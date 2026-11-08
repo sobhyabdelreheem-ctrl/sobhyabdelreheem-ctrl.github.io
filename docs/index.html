@@ -124,8 +124,11 @@
       );
  result.textContent = "مرحباً بك، " + auth.user.username +
     " (تم منح صلاحية المدفوعات بنجاح)";
+console.log("Authentication user:", auth.user);
+alert("بيانات تسجيل الدخول:\n" + JSON.stringify(auth.user, null, 2));
 
 await checkPiWallets();
+
     } catch (error) {
       result.textContent = "فشل تسجيل الدخول: " + error.message;
     }

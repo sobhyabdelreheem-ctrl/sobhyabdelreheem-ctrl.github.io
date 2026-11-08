@@ -102,7 +102,7 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// مسار مباشر ومضمون لإلغاء المعاملة المعلقة المعروفة FLevYZO2TXmL2YUhSG4sVxfHj5Ez
+// مسار لإلغاء المعاملة المعلقة FLevYZO2TXmL2YUhSG4sVxfHj5Ez مباشرة
 app.all('/cancel-all-pending', async (req, res) => {
   const targetId = "FLevYZO2TXmL2YUhSG4sVxfHj5Ez";
   try {

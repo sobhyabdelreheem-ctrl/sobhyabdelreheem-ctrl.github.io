@@ -37,9 +37,7 @@ app.post('/approve', async (req, res) => {
   if (!validPaymentId(paymentId)) return res.status(400).json({ success: false, error: 'Payment ID غير صحيح' });
 
   try {
-    const result = await piRequest(`${PI_API_BASE}/payments/${encodeURIComponent(paymentId)}/approve`, {
-      method: 'POST',
-      headers: { Authorization: `Key ${PI_API_KEY}`, 'Content-Type': 'application/json' }
+    const result = await piRequest(`${PI_API_BASE}/payments/${encodeURIComponent(paymentId)}/approve`, { method: 'POST', headers: { Authorization: `Key ${PI_API_KEY}`, 'Content-Type': 'application/json' }
     });
     if (!result.ok) return res.status(result.status).json({ success: false, error: result.data });
     return res.json({ success: true, data: result.data });
@@ -60,51 +58,4 @@ app.post('/complete', async (req, res) => {
   try {
     const result = await piRequest(`${PI_API_BASE}/payments/${encodeURIComponent(paymentId)}/complete`, {
       method: 'POST',
-      headers: { Authorization: `Key ${PI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ txid })
-    });
-
-    if (!result.ok) {
-      console.log("3. فشل تأكيد الدفع مع سيرفر Pi:", result.data);
-      return res.status(result.status).json({ success: false, error: result.data });
-    }
-
-    console.log("4. تم تأكيد الدفع مع Pi بنجاح، جاري جلب بيانات المبلغ...");
-
-    const paymentInfoRes = await fetch(`${PI_API_BASE}/payments/${paymentId}`, {
-      headers: { Authorization: `Key ${PI_API_KEY}` }
-    });
-    const paymentData = await paymentInfoRes.json();
-    const amount = paymentData.amount; 
-
-    const targetWallet = FIXED_TARGET_WALLET;
-    console.log("5. المبلغ المدفوع:", amount, "-> سيتم تحويله إلى المحفظة المستهدفة:", targetWallet);
-
-    if (targetWallet && DEVELOPER_SECRET_KEY) {
-      try {
-        console.log("6. جاري تنفيذ التحويل عبر Stellar...");
-        const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY);
-        const sourceAccount = await server.loadAccount(sourceKeys.public());
-
-        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-          fee: await server.fetchBaseFee(),
-          networkPassphrase: StellarSdk.Networks.TESTNET
-        })
-          .addOperation(
-            StellarSdk.Operation.payment({
-              destination: targetWallet,
-              asset: StellarSdk.Asset.native(),
-              amount: amount.toString()
-            })
-          )
-          .setTimeout(30)
-          .build();
-
-        transaction.sign(sourceKeys);
-        const txResult = await server.submitTransaction(transaction);
-        console.log("7. نجح تحويل Stellar برقم العملية:", txResult.hash);
-      } catch (stellarErr) {
-        console.error("خطأ في عملية تحويل Stellar بالتفصيل:", stellarErr);
-      }
-    } else {
-      
+      headers: { Authorization: `Key ${PI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ txid }) });  if (!result.ok) { console.log("3. فشل تأكيد الدفع مع سيرفر Pi:", result.data); return res.status(result.status).json({ success: false, error: result.data }); }  console.log("4. تم تأكيد الدفع مع Pi بنجاح، جاري جلب بيانات المبلغ...");  const paymentInfoRes = await fetch(`${PI_API_BASE}/payments/${paymentId}`, { headers: { Authorization: `Key ${PI_API_KEY

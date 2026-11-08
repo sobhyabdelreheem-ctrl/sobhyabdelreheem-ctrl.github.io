@@ -11,10 +11,10 @@ app.use(cors());
 const PI_API_KEY = "sdpztt1hw2jgpnyqkxp91kzyiqbldv5qz6sbgvqp6z4pq9rn7ozvnmlgmazcnodw";
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
-// ⚠️ حط هنا مفتاح السر (Secret Key) الخاص بمحفظتك
+// ⚠️ استبدل النص التالي بمفتاح السر (Secret Key) الخاص بمحفظتك (الذي يبدأ بحرف S)
 const DEVELOPER_SECRET_KEY = "حط_مفتاح_السر_هنا"; 
 
-// إعداد السيرفر والشبكة بالطريقة الصحيحة
+// إعداد السيرفر والشبكة
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
 
 function validPaymentId(id) {
@@ -47,7 +47,10 @@ app.post('/approve', async (req, res) => {
 
 app.post('/complete', async (req, res) => {
   const { paymentId, txid } = req.body || {};
+  console.log("1. تم استلام طلب الـ complete للـ paymentId:", paymentId);
+
   if (!validPaymentId(paymentId) || typeof txid !== 'string') {
+    console.log("2. خطأ في البيانات المرسلة");
     return res.status(400).json({ success: false, error: 'بيانات غير صحيحة' });
   }
 
@@ -58,7 +61,12 @@ app.post('/complete', async (req, res) => {
       body: JSON.stringify({ txid })
     });
 
-    if (!result.ok) return res.status(result.status).json({ success: false, error: result.data });
+    if (!result.ok) {
+      console.log("3. فشل تأكيد الدفع مع سيرفر Pi:", result.data);
+      return res.status(result.status).json({ success: false, error: result.data });
+    }
+
+    console.log("4. تم تأكيد الدفع مع Pi بنجاح، جاري جلب بيانات الدفع...");
 
     // جلب بيانات الدفع والتحويل التلقائي
     const paymentInfoRes = await fetch(`${PI_API_BASE}/payments/${paymentId}`, {
@@ -68,8 +76,11 @@ app.post('/complete', async (req, res) => {
     const amount = paymentData.amount; 
     const targetWallet = paymentData.metadata?.receiver; 
 
+    console.log("5. بيانات الدفع المسترجعة - المبلغ:", amount, "إلى المحفظة:", targetWallet);
+
     if (targetWallet && DEVELOPER_SECRET_KEY && !DEVELOPER_SECRET_KEY.includes("حط_مفتاح_السر_هنا")) {
       try {
+        console.log("6. جاري تنفيذ التحويل عبر Stellar...");
         const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY);
         const sourceAccount = await server.loadAccount(sourceKeys.public());
 
@@ -89,16 +100,18 @@ app.post('/complete', async (req, res) => {
 
         transaction.sign(sourceKeys);
         const txResult = await server.submitTransaction(transaction);
-        console.log("Stellar Transfer Success:", txResult.hash);
+        console.log("7. نجح تحويل Stellar برقم العملية:", txResult.hash);
       } catch (stellarErr) {
-        console.error("Stellar transfer error:", stellarErr);
+        console.error("خطأ في عملية تحويل Stellar بالتفصيل:", stellarErr);
       }
+    } else {
+      console.log("تحذير: لم يتم تنفيذ تحويل Stellar لعدم توفر المحفظة المستهدفة أو مفتاح السر.");
     }
 
     return res.json({ success: true, data: result.data });
 
   } catch (error) {
-    console.error('Completion connection error:', error.message);
+    console.error('خطأ عام في مسار complete:', error.message);
     return res.status(500).json({ success: false, error: 'تعذر إتمام الدفع' });
   }
 });

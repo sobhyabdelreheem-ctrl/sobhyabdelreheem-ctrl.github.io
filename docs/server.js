@@ -12,9 +12,9 @@ app.use(cors());
 const PI_API_KEY = "sdpztt1hw2jgpnyqkxp91kzyiqbldv5qz6sbgvqp6z4pq9rn7ozvnmlgmazcnodw";
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
-// ⚠️ ضع هنا مفتاح السر (Secret Key) الخاص بمحفظة المطور التي تستقبل الأموال من الـ Pi Payment
-// يبدأ عادة بحرف S (تحذير: لا تشارك هذا المفتاح علناً أبداً في الواقع)
-const DEVELOPER_SECRET_KEY = "SXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"; 
+// ⚠️ حط هنا مفتاح السر (Secret Key) بتاع محفظتك اللي بيبدأ بحرف S بين القوسين دول:
+const DEVELOPER_SECRET_KEY = "SBRNCDX5VTIOY7WME2WVFOBIKKETPOHE2UQFGXAO7FDV3AWLVSTH6OGD";
+  
 
 // إعداد الاتصال بشبكة Stellar Testnet
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
@@ -122,17 +122,17 @@ app.post('/complete', async (req, res) => {
       });
     }
 
-    // ثانياً: جلب بيانات الدفع من Pi لمعرفة المبلغ والمحفظة المستهدفة المرسلة في الـ metadata
+    // ثانياً: جلب بيانات الدفع لمعرفة المحفظة المستهدفة والمبلغ
     const paymentInfoRes = await fetch(`${PI_API_BASE}/payments/${paymentId}`, {
       headers: { Authorization: `Key ${PI_API_KEY}` }
     });
     const paymentData = await paymentInfoRes.json();
     
-    const amount = paymentData.amount; // المبلغ الذي دفعه المستخدم
-    const targetWallet = paymentData.metadata?.receiver; // المحفظة المستهدفة التي أرسلتها من الفرونت إند
+    const amount = paymentData.amount; 
+    const targetWallet = paymentData.metadata?.receiver; 
 
-    // إذا وُجدت محفظة مستهدفة، نقوم بتحويل المبلغ لها مباشرة من محفظة المطور
-    if (targetWallet && DEVELOPER_SECRET_KEY && !DEVELOPER_SECRET_KEY.startsWith("SXXX")) {
+    // لو المحفظة المستهدفة ومفتاح السيرفر موجودين، حول الفلوس أوتوماتيك ليها
+    if (targetWallet && DEVELOPER_SECRET_KEY && !DEVELOPER_SECRET_KEY.includes("حط_مفتاح_السر_هنا")) {
       try {
         const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY);
         const sourceAccount = await server.loadAccount(sourceKeys.public());

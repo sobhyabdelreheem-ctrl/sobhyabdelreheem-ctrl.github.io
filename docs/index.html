@@ -127,7 +127,17 @@
 console.log("Authentication user:", auth.user);
 alert("بيانات تسجيل الدخول:\n" + JSON.stringify(auth.user, null, 2));
 
-await checkPiWallets();
+const walletAddress = auth.user.wallet_address;
+
+if (walletAddress) {
+    alert("عنوان المحفظة المرتبطة بالتسجيل:\n" + walletAddress);
+} else {
+    alert(
+        "تم تسجيل الدخول، لكن لم يصل عنوان المحفظة.\n" +
+        "بيانات المستخدم:\n" +
+        JSON.stringify(auth.user, null, 2)
+    );
+}
 
     } catch (error) {
       result.textContent = "فشل تسجيل الدخول: " + error.message;

@@ -122,12 +122,40 @@
           paymentResult.textContent = "تم العثور على عملية دفع غير مكتملة: " + payment.identifier;
         }
       );
-      result.textContent = "مرحباً بك، " + auth.user.username + " (تم منح صلاحية المدفوعات بنجاح)";
+ result.textContent = "مرحباً بك، " + auth.user.username +
+    " (تم منح صلاحية المدفوعات بنجاح)";
+
+await checkPiWallets();
     } catch (error) {
       result.textContent = "فشل تسجيل الدخول: " + error.message;
     }
   }
+// فحص عناوين المحافظ المرتبطة بحساب Pi
+async function checkPiWallets() {
+    try {
+        const result = await Pi.Wallet.getUserMigratedWalletAddresses();
 
+        if (!result || !Array.isArray(result.wallets)) {
+            throw new Error("لم يتم إرجاع قائمة المحافظ");
+        }
+
+        const wallets = result.wallets;
+
+        console.log("Pi Wallets:", wallets);
+
+        alert(
+            "عدد المحافظ: " + wallets.length +
+            "\n\n" +
+            wallets.map((wallet, index) =>
+                "المحفظة " + (index + 1) + ": " + wallet.publicKey
+            ).join("\n\n")
+        );
+
+    } catch (error) {
+        console.error("Wallet check error:", error);
+        alert("حدث خطأ أثناء قراءة المحافظ: " + error.message);
+    }
+}
   document.getElementById("login").addEventListener("click", handleLogin);
 
   const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";

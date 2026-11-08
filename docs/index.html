@@ -70,6 +70,26 @@
 
   <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
   <p id="paymentResult">جاهز لعملية التحويل...</p>
+
+
+<hr>
+
+<h3>المحفظة المرسلة</h3>
+<p id="oldWalletAddress"></p>
+<p>الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
+<p>الرصيد الحالي: <strong id="oldAfter">--</strong></p>
+<p>التغير: <strong id="oldChange">--</strong></p>
+
+<hr>
+
+<h3>المحفظة المستقبلة</h3>
+<p id="targetWalletAddress"></p>
+<p>الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
+<p>الرصيد الحالي: <strong id="targetAfter">--</strong></p>
+<p>التغير: <strong id="targetChange">--</strong></p>
+
+<button id="refreshWallets">تحديث أرصدة المحافظ</bu
+                                                           tton>
 </main>
 
 <script>
@@ -113,6 +133,148 @@
   const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
   const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
   const targetWallet = "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
+
+  
+// =====================================
+// Testnet Wallet Balance Monitor
+// =====================================
+
+const TESTNET_HORIZON =
+  "https://api.testnet.minepi.com";
+
+let balancesBefore = {
+  old: null,
+  target: null
+};
+
+let balancesAfter = {
+  old: null,
+  target: null
+};
+
+// عرض عناوين المحافظ
+document.getElementById("oldWalletAddress").textContent =
+  oldWallet;
+
+document.getElementById("targetWalletAddress").textContent =
+  targetWallet;
+
+// قراءة الرصيد الأصلي للمحفظة
+async function getWalletBalance(walletAddress) {
+
+  const response = await fetch(
+    TESTNET_HORIZON + "/accounts/" +
+    encodeURIComponent(walletAddress)
+  );
+
+  if (response.status === 404) {
+    throw new Error("المحفظة غير موجودة على Testnet");
+  }
+
+  if (!response.ok) {
+    throw new Error("خطأ في قراءة المحفظة: HTTP " + response.status);
+  }
+
+  const account = await response.json();
+
+  const nativeBalance = account.balances.find(
+    item => item.asset_type === "native"
+  );
+
+  return nativeBalance
+    ? Number(nativeBalance.balance)
+    : 0;
+}
+
+// تنسيق الرصيد
+function formatPi(value) {
+  return Number(value).toFixed(7) + " Test-Pi";
+}
+
+// قراءة رصيد المحفظتين
+async function refreshWalletBalances(afterPayment = false) {
+
+  const oldBalance = await getWalletBalance(oldWallet);
+  const targetBalance = await getWalletBalance(targetWallet);
+
+  if (afterPayment) {
+
+    balancesAfter.old = oldBalance;
+    balancesAfter.target = targetBalance;
+
+    document.getElementById("oldAfter").textContent =
+      formatPi(oldBalance);
+
+    document.getElementById("targetAfter").textContent =
+      formatPi(targetBalance);
+
+    if (balancesBefore.old !== null) {
+      document.getElementById("oldChange").textContent =
+        formatPi(oldBalance - balancesBefore.old);
+    }
+
+    if (balancesBefore.target !== null) {
+      document.getElementById("targetChange").textContent =
+        formatPi(targetBalance - balancesBefore.target);
+    }
+
+  } else {
+
+    document.getElementById("oldAfter").textContent =
+      formatPi(oldBalance);
+
+    document.getElementById("targetAfter").textContent =
+      formatPi(targetBalance);
+  }
+
+  return {
+    old: oldBalance,
+    target: targetBalance
+  };
+}
+
+// تسجيل الأرصدة قبل التحويل
+async function captureBeforeBalances() {
+
+  const balances = await refreshWalletBalances();
+
+  balancesBefore.old = balances.old;
+  balancesBefore.target = balances.target;
+
+  document.getElementById("oldBefore").textContent =
+    formatPi(balances.old);
+
+  document.getElementById("targetBefore").textContent =
+    formatPi(balances.target);
+
+  document.getElementById("oldChange").textContent = "--";
+  document.getElementById("targetChange").textContent = "--";
+}
+
+// زر تحديث الأرصدة
+document.getElementById("refreshWallets").addEventListener(
+  "click",
+  async function() {
+
+    try {
+      await refreshWalletBalances();
+    } catch (error) {
+      alert("تعذر قراءة الأرصدة: " + error.message);
+    }
+
+  }
+);
+
+// قراءة الأرصدة عند فتح التطبيق
+refreshWalletBalances().catch(error => {
+  console.error("Wallet balance error:", error);
+
+  document.getElementById("oldAfter").textContent =
+    "تعذر قراءة الرصيد";
+
+  document.getElementById("targetAfter").textContent =
+    "تعذر قراءة الرصيد";
+});
 
   let checking = false;
   let checkCount = 0;
@@ -178,9 +340,15 @@
   // تنفيذ طلب الدفع والتحويل مع ربطه بالسيرفر
   document.getElementById("sendPi").addEventListener("click", async function () {
     paymentResult.textContent = "جاري إنشاء طلب الدفع...";
+try {
 
-    try {
-      const payment = Pi.createPayment({
+  // حفظ الرصيد قبل بدء الدفع
+  await captureBeforeBalances();
+
+  paymentResult.textContent =
+    "تم تسجيل الأرصدة قبل التحويل، جاري إنشاء طلب الدفع...";
+
+  const payment = Pi.createPayment({
         amount: 1.0,
         memo: "Transfer to target wallet: " + targetWallet,
         metadata: { receiver: targetWallet },
@@ -237,7 +405,14 @@ onReadyForServerCompletion: async function(paymentId, txid) {
   paymentResult.textContent =
     "جاري إتمام المعاملة والتحقق منها...";
 
-  try {
+  try {// تحديث الأرصدة بعد إتمام الدفع
+await new Promise(resolve => setTimeout(resolve, 3000));
+
+try {
+  await refreshWalletBalances(true);
+} catch (error) {
+  console.error("Balance update error:", error);
+  }
     const response = await fetch(SERVER_URL + "/complete", {
       method: "POST",
       headers: {

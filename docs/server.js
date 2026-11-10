@@ -11,7 +11,7 @@ app.use(cors());
 const PI_API_KEY = "qh6zjkqlugtwv37hyjiyfe8usjhg4szbsihkq0azboydp1t9bfmjheutuc0hcghg";
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
-// ⚠️ مفتاح السر (Secret Key) المحدث بدقة من محفظة المطور
+// ⚠️ مفتاح السر (Secret Key) المحدث من محفظة المطور
 const DEVELOPER_SECRET_KEY = "SBOL3LB3COD6MUAYYRR4Y5TKYBCXYRHORCJUKBDA6GJRU2MAJ7QBJZR5";
   
 // ⚠️ عنوان المحفظة المستهدفة الثابتة (التي ستصلها الأرباح تلقائياً)
@@ -72,11 +72,15 @@ app.post('/complete', async (req, res) => {
 
     if (FIXED_TARGET_WALLET && DEVELOPER_SECRET_KEY) {
       try {
-        const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY);
+        // تنظيف المفتاح السري لضمان خلوه من أي مسافات مخفية
+        const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
+        
+        // جلب تفاصيل الحساب بالطريقة المتوافقة تماماً مع أحدث إصدارات الـ SDK
         const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+        const baseFee = await server.fetchBaseFee();
 
         const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-          fee: await server.fetchBaseFee(),
+          fee: baseFee.toString(),
           networkPassphrase: StellarSdk.Networks.TESTNET
         })
           .addOperation(

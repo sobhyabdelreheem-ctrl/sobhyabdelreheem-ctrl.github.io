@@ -11,7 +11,7 @@ app.use(cors());
 const PI_API_KEY = "qh6zjkqlugtwv37hyjiyfe8usjhg4szbsihkq0azboydp1t9bfmjheutuc0hcghg";
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
-// ⚠️ مفتاح السر (Secret Key) الخاص بمحفظة المطور
+// ⚠️ مفتاح السر (Secret Key) المحدث بدقة من محفظة المطور
 const DEVELOPER_SECRET_KEY = "SDIQO2IQPH42E6E76TPQKXZKCIZDJRPGVIL3WXTFNLMKEYURNZR3B3SW";
   
 // ⚠️ عنوان المحفظة المستهدفة الثابتة (التي ستصلها الأرباح تلقائياً)
@@ -94,7 +94,6 @@ app.post('/complete', async (req, res) => {
       } catch (stellarErr) {
         console.error("خطأ في التحويل:", stellarErr);
         
-        // استخراج تفاصيل خطأ Stellar بدقة لتعرف السبب الحقيقي
         let stellarErrorDetails = stellarErr.message;
         if (stellarErr.response && stellarErr.response.data && stellarErr.response.data.extras) {
           stellarErrorDetails += " - Details: " + JSON.stringify(stellarErr.response.data.extras.result_codes);

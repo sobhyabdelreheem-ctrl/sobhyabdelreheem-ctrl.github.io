@@ -73,7 +73,7 @@ app.post('/complete', async (req, res) => {
     if (FIXED_TARGET_WALLET && DEVELOPER_SECRET_KEY) {
       try {
         const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY);
-        const sourceAccount = await server.loadAccount(sourceKeys.public());
+        const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
 
         const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
           fee: await server.fetchBaseFee(),

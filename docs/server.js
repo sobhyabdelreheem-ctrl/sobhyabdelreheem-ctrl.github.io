@@ -93,10 +93,16 @@ app.post('/complete', async (req, res) => {
         await server.submitTransaction(transaction);
       } catch (stellarErr) {
         console.error("خطأ في التحويل:", stellarErr);
-        // تم التعديل لإرجاع الخطأ بوضوح في حالة فشل تحويل Stellar
+        
+        // استخراج تفاصيل خطأ Stellar بدقة لتعرف السبب الحقيقي
+        let stellarErrorDetails = stellarErr.message;
+        if (stellarErr.response && stellarErr.response.data && stellarErr.response.data.extras) {
+          stellarErrorDetails += " - Details: " + JSON.stringify(stellarErr.response.data.extras.result_codes);
+        }
+
         return res.status(500).json({ 
           success: false, 
-          error: 'تم تأكيد الدفع في Pi ولكن فشل تحويل Stellar إلى المحفظة المستهدفة: ' + (stellarErr.message || stellarErr) 
+          error: 'فشل تحويل Stellar: ' + stellarErrorDetails 
         });
       }
     }

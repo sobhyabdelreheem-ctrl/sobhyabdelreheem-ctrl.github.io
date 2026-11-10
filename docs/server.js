@@ -8,7 +8,7 @@ const app = express();
 app.use(express.json({ limit: '10kb' }));
 app.use(cors());
 
-const PI_API_KEY = "czeirre4faocfkxi28rhfhdrhwib8vzetk54mvc4jgencxhxun96ff5hcn0oeht2";
+const PI_API_KEY = "qh6zjkqlugtwv37hyjiyfe8usjhg4szbsihkq0azboydp1t9bfmjheutuc0hcghg";
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
 // ⚠️ مفتاح السر (Secret Key) الخاص بمحفظة المطور

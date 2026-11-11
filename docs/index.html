@@ -1,10 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wallet Monitor & Transfer</title>
+
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,6 +15,7 @@
       padding: 20px;
       background: #f4f4f4;
     }
+
     main {
       background: white;
       padding: 24px;
@@ -20,6 +24,7 @@
       margin: auto;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
+
     button {
       padding: 12px 20px;
       margin: 10px;
@@ -31,15 +36,24 @@
       color: white;
       transition: background 0.3s;
     }
+
     button:hover {
       background-color: #0056b3;
     }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     #sendPi {
       background-color: #7b1fa2;
     }
+
     #sendPi:hover {
       background-color: #4a148c;
     }
+
     #balanceResult, #result, #paymentResult {
       white-space: pre-line;
       font-size: 16px;
@@ -50,10 +64,18 @@
       background: #fafafa;
       border-radius: 6px;
     }
+
+    hr {
+      margin: 20px 0;
+      border: 0;
+      border-top: 1px solid #ddd;
+    }
   </style>
 </head>
+
 <body>
 <main>
+
   <h2>Wallet Monitor & Transfer</h2>
   <p>Pi Testnet Balance Monitor</p>
   <p id="status">جاري تهيئة Pi SDK...</p>
@@ -61,127 +83,63 @@
   <button id="login">تسجيل الدخول وطلب الصلاحيات</button>
   <p id="result">لم يتم تسجيل الدخول بعد</p>
 
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+  <hr>
 
   <button id="checkBalance">فحص الرصيد الآن</button>
   <p id="balanceResult">في انتظار الفحص...</p>
 
-  <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+  <hr>
 
   <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
   <p id="paymentResult">جاهز لعملية التحويل...</p>
 
+  <hr>
 
-<hr>
+  <h3>المحفظة المرسلة</h3>
+  <p id="oldWalletAddress"></p>
+  <p>الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
+  <p>الرصيد الحالي: <strong id="oldAfter">--</strong></p>
+  <p>التغير: <strong id="oldChange">--</strong></p>
 
-<h3>المحفظة المرسلة</h3>
-<p id="oldWalletAddress"></p>
-<p>الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
-<p>الرصيد الحالي: <strong id="oldAfter">--</strong></p>
-<p>التغير: <strong id="oldChange">--</strong></p>
+  <hr>
 
-<hr>
+  <h3>المحفظة المستقبلة</h3>
+  <p id="targetWalletAddress"></p>
+  <p>الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
+  <p>الرصيد الحالي: <strong id="targetAfter">--</strong></p>
+  <p>التغير: <strong id="targetChange">--</strong></p>
 
-<h3>المحفظة المستقبلة</h3>
-<p id="targetWalletAddress"></p>
-<p>الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
-<p>الرصيد الحالي: <strong id="targetAfter">--</strong></p>
-<p>التغير: <strong id="targetChange">--</strong></p>
+  <button id="refreshWallets">تحديث أرصدة المحافظ</button>
 
-<button id="refreshWallets">تحديث أرصدة المحافظ</bu
-                                                           tton>
 </main>
 
 <script>
-  // رابط سيرفرك المباشر على Vercel
-  const SERVER_URL = "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
 
-  const status = document.getElementById("status");
-  const result = document.getElementById("result");
-  const balanceResult = document.getElementById("balanceResult");
-  const paymentResult = document.getElementById("paymentResult");
-
-  try {
-    Pi.init({
-      version: "2.0",
-      sandbox: true
-    });
-    status.textContent = "Pi SDK initialized successfully.";
-  } catch (error) {
-    status.textContent = "SDK initialization error: " + error.message;
-  }
-
-  // تسجيل الدخول وطلب الصلاحيات
-  async function handleLogin() {
-    result.textContent = "جاري طلب المصادقة والصلاحيات...";
-    try {
-      const auth = await Pi.authenticate(
-            ["username", "payments", "wallet_address"],
-        function onIncompletePaymentFound(payment) {
-          console.log("Incomplete payment found:", payment);
-          paymentResult.textContent = "تم العثور على عملية دفع غير مكتملة: " + payment.identifier;
-        }
-      );
- result.textContent = "مرحباً بك، " + auth.user.username +
-    " (تم منح صلاحية المدفوعات بنجاح)";
-console.log("Authentication user:", auth.user);
-alert("بيانات تسجيل الدخول:\n" + JSON.stringify(auth.user, null, 2));
-
-const walletAddress = auth.user.wallet_address;
-
-if (walletAddress) {
-    alert("عنوان المحفظة المرتبطة بالتسجيل:\n" + walletAddress);
-} else {
-    alert(
-        "تم تسجيل الدخول، لكن لم يصل عنوان المحفظة.\n" +
-        "بيانات المستخدم:\n" +
-        JSON.stringify(auth.user, null, 2)
-    );
-}
-
-    } catch (error) {
-      result.textContent = "فشل تسجيل الدخول: " + error.message;
-    }
-  }
-// فحص عناوين المحافظ المرتبطة بحساب Pi
-async function checkPiWallets() {
-    try {
-        const result = await Pi.Wallet.getUserMigratedWalletAddresses();
-
-        if (!result || !Array.isArray(result.wallets)) {
-            throw new Error("لم يتم إرجاع قائمة المحافظ");
-        }
-
-        const wallets = result.wallets;
-
-        console.log("Pi Wallets:", wallets);
-
-        alert(
-            "عدد المحافظ: " + wallets.length +
-            "\n\n" +
-            wallets.map((wallet, index) =>
-                "المحفظة " + (index + 1) + ": " + wallet.publicKey
-            ).join("\n\n")
-        );
-
-    } catch (error) {
-        console.error("Wallet check error:", error);
-        alert("حدث خطأ أثناء قراءة المحافظ: " + error.message);
-    }
-}
-  document.getElementById("login").addEventListener("click", handleLogin);
-
-  const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
-  const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
-  const targetWallet = "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
-
-  
 // =====================================
-// Testnet Wallet Balance Monitor
+// إعدادات التطبيق
 // =====================================
+
+const SERVER_URL =
+  "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
 
 const TESTNET_HORIZON =
   "https://api.testnet.minepi.com";
+
+const balanceId =
+  "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
+
+const oldWallet =
+  "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
+
+const targetWallet =
+  "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
+
+const status = document.getElementById("status");
+const result = document.getElementById("result");
+const balanceResult = document.getElementById("balanceResult");
+const paymentResult = document.getElementById("paymentResult");
+
+const sendButton = document.getElementById("sendPi");
 
 let balancesBefore = {
   old: null,
@@ -193,309 +151,790 @@ let balancesAfter = {
   target: null
 };
 
+let checking = false;
+let checkCount = 0;
+let paymentInProgress = false;
+
+
+// =====================================
+// تهيئة Pi SDK
+// =====================================
+
+try {
+  Pi.init({
+    version: "2.0",
+    sandbox: true
+  });
+
+  status.textContent = "Pi SDK initialized successfully.";
+
+} catch (error) {
+  status.textContent =
+    "SDK initialization error: " + error.message;
+}
+
+
+// =====================================
+// تسجيل الدخول
+// =====================================
+
+async function handleLogin() {
+
+  result.textContent =
+    "جاري طلب المصادقة والصلاحيات...";
+
+  try {
+
+    const auth = await Pi.authenticate(
+      ["username", "payments", "wallet_address"],
+
+      function onIncompletePaymentFound(payment) {
+
+        console.log(
+          "Incomplete payment found:",
+          payment
+        );
+
+        paymentResult.textContent =
+          "تم العثور على عملية دفع غير مكتملة: " +
+          payment.identifier;
+      }
+    );
+
+    result.textContent =
+      "مرحباً بك، " + auth.user.username +
+      " (تم منح صلاحية المدفوعات بنجاح)";
+
+    console.log(
+      "Authentication user:",
+      auth.user
+    );
+
+    const walletAddress =
+      auth.user.wallet_address;
+
+    if (walletAddress) {
+      console.log(
+        "Pi wallet address:",
+        walletAddress
+      );
+    } else {
+      console.log(
+        "لم يصل عنوان المحفظة ضمن بيانات التسجيل"
+      );
+    }
+
+  } catch (error) {
+
+    result.textContent =
+      "فشل تسجيل الدخول: " + error.message;
+
+  }
+}
+
+
+// =====================================
+// فحص المحافظ المرتبطة بحساب Pi
+// =====================================
+
+async function checkPiWallets() {
+
+  try {
+
+    const walletResult =
+      await Pi.Wallet.getUserMigratedWalletAddresses();
+
+    if (
+      !walletResult ||
+      !Array.isArray(walletResult.wallets)
+    ) {
+      throw new Error(
+        "لم يتم إرجاع قائمة المحافظ"
+      );
+    }
+
+    const wallets = walletResult.wallets;
+
+    console.log("Pi Wallets:", wallets);
+
+    alert(
+      "عدد المحافظ: " + wallets.length +
+      "\n\n" +
+      wallets.map((wallet, index) =>
+        "المحفظة " + (index + 1) +
+        ": " + wallet.publicKey
+      ).join("\n\n")
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Wallet check error:",
+      error
+    );
+
+    alert(
+      "حدث خطأ أثناء قراءة المحافظ: " +
+      error.message
+    );
+
+  }
+}
+
+document
+  .getElementById("login")
+  .addEventListener("click", handleLogin);
+
+
+// =====================================
 // عرض عناوين المحافظ
-document.getElementById("oldWalletAddress").textContent =
-  oldWallet;
+// =====================================
 
-document.getElementById("targetWalletAddress").textContent =
-  targetWallet;
+document.getElementById("oldWalletAddress")
+  .textContent = oldWallet;
 
-// قراءة الرصيد الأصلي للمحفظة
+document.getElementById("targetWalletAddress")
+  .textContent = targetWallet;
+
+
+// =====================================
+// قراءة رصيد المحفظة من Testnet
+// =====================================
+
 async function getWalletBalance(walletAddress) {
 
   const response = await fetch(
-    TESTNET_HORIZON + "/accounts/" +
+    TESTNET_HORIZON +
+    "/accounts/" +
     encodeURIComponent(walletAddress)
   );
 
   if (response.status === 404) {
-    throw new Error("المحفظة غير موجودة على Testnet");
+    throw new Error(
+      "المحفظة غير موجودة على Testnet"
+    );
   }
 
   if (!response.ok) {
-    throw new Error("خطأ في قراءة المحفظة: HTTP " + response.status);
+    throw new Error(
+      "خطأ في قراءة المحفظة: HTTP " +
+      response.status
+    );
   }
 
   const account = await response.json();
 
-  const nativeBalance = account.balances.find(
-    item => item.asset_type === "native"
-  );
+  const nativeBalance =
+    account.balances.find(
+      item => item.asset_type === "native"
+    );
 
   return nativeBalance
     ? Number(nativeBalance.balance)
     : 0;
 }
 
+
+// =====================================
 // تنسيق الرصيد
+// =====================================
+
 function formatPi(value) {
-  return Number(value).toFixed(7) + " Test-Pi";
+
+  return Number(value).toFixed(7) +
+    " Test-Pi";
+
 }
 
-// قراءة رصيد المحفظتين
-async function refreshWalletBalances(afterPayment = false) {
 
-  const oldBalance = await getWalletBalance(oldWallet);
-  const targetBalance = await getWalletBalance(targetWallet);
+// =====================================
+// عرض الأرصدة والتغيرات
+// =====================================
 
-  if (afterPayment) {
+function displayWalletBalances(
+  oldBalance,
+  targetBalance,
+  afterPayment = false
+) {
 
-    balancesAfter.old = oldBalance;
-    balancesAfter.target = targetBalance;
+  document.getElementById("oldAfter")
+    .textContent = formatPi(oldBalance);
 
-    document.getElementById("oldAfter").textContent =
-      formatPi(oldBalance);
+  document.getElementById("targetAfter")
+    .textContent = formatPi(targetBalance);
 
-    document.getElementById("targetAfter").textContent =
-      formatPi(targetBalance);
+  balancesAfter.old = oldBalance;
+  balancesAfter.target = targetBalance;
 
-    if (balancesBefore.old !== null) {
-      document.getElementById("oldChange").textContent =
-        formatPi(oldBalance - balancesBefore.old);
-    }
+  if (
+    afterPayment &&
+    balancesBefore.old !== null
+  ) {
 
-    if (balancesBefore.target !== null) {
-      document.getElementById("targetChange").textContent =
-        formatPi(targetBalance - balancesBefore.target);
-    }
+    document.getElementById("oldChange")
+      .textContent =
+      formatPi(oldBalance - balancesBefore.old);
 
-  } else {
-
-    document.getElementById("oldAfter").textContent =
-      formatPi(oldBalance);
-
-    document.getElementById("targetAfter").textContent =
-      formatPi(targetBalance);
   }
+
+  if (
+    afterPayment &&
+    balancesBefore.target !== null
+  ) {
+
+    document.getElementById("targetChange")
+      .textContent =
+      formatPi(targetBalance - balancesBefore.target);
+
+  }
+
+}
+
+
+// =====================================
+// قراءة رصيد المحفظتين
+// =====================================
+
+async function refreshWalletBalances(
+  afterPayment = false
+) {
+
+  const oldBalance =
+    await getWalletBalance(oldWallet);
+
+  const targetBalance =
+    await getWalletBalance(targetWallet);
+
+  displayWalletBalances(
+    oldBalance,
+    targetBalance,
+    afterPayment
+  );
 
   return {
     old: oldBalance,
     target: targetBalance
   };
+
 }
 
+
+// =====================================
 // تسجيل الأرصدة قبل التحويل
+// =====================================
+
 async function captureBeforeBalances() {
 
-  const balances = await refreshWalletBalances();
+  const balances =
+    await refreshWalletBalances();
 
   balancesBefore.old = balances.old;
   balancesBefore.target = balances.target;
 
-  document.getElementById("oldBefore").textContent =
-    formatPi(balances.old);
+  document.getElementById("oldBefore")
+    .textContent = formatPi(balances.old);
 
-  document.getElementById("targetBefore").textContent =
-    formatPi(balances.target);
+  document.getElementById("targetBefore")
+    .textContent = formatPi(balances.target);
 
-  document.getElementById("oldChange").textContent = "--";
-  document.getElementById("targetChange").textContent = "--";
+  document.getElementById("oldChange")
+    .textContent = "--";
+
+  document.getElementById("targetChange")
+    .textContent = "--";
+
+  return balances;
+
 }
 
-// زر تحديث الأرصدة
-document.getElementById("refreshWallets").addEventListener(
+
+// =====================================
+// الانتظار حتى يظهر التحويل على الشبكة
+// =====================================
+
+function delay(milliseconds) {
+
+  return new Promise(resolve =>
+    setTimeout(resolve, milliseconds)
+  );
+
+}
+
+async function waitForTargetBalanceUpdate(
+  previousTargetBalance
+) {
+
+  const maxAttempts = 10;
+  const interval = 2000;
+
+  for (
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ) {
+
+    paymentResult.textContent =
+      "تم تأكيد الدفع من السيرفر." +
+      "\nجاري تحديث أرصدة المحافظ..." +
+      "\nمحاولة التحديث: " +
+      attempt + " من " + maxAttempts;
+
+    try {
+
+      const balances =
+        await refreshWalletBalances(true);
+
+      // ننتظر ظهور زيادة فعلية في المحفظة المستقبلة
+      if (
+        balances.target >
+        previousTargetBalance + 0.00000005
+      ) {
+
+        return {
+          updated: true,
+          balances: balances
+        };
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Balance refresh attempt failed:",
+        error
+      );
+
+    }
+
+    if (attempt < maxAttempts) {
+      await delay(interval);
+    }
+
+  }
+
+  return {
+    updated: false,
+    balances: balancesAfter
+  };
+
+}
+
+
+// =====================================
+// زر تحديث الأرصدة يدويًا
+// =====================================
+
+document
+  .getElementById("refreshWallets")
+  .addEventListener("click", async function() {
+
+    try {
+
+      await refreshWalletBalances();
+
+      paymentResult.textContent =
+        "تم تحديث أرصدة المحافظ بنجاح.";
+
+    } catch (error) {
+
+      alert(
+        "تعذر قراءة الأرصدة: " +
+        error.message
+      );
+
+    }
+
+  });
+
+
+// =====================================
+// قراءة الأرصدة عند فتح التطبيق
+// =====================================
+
+refreshWalletBalances().catch(error => {
+
+  console.error(
+    "Wallet balance error:",
+    error
+  );
+
+  document.getElementById("oldAfter")
+    .textContent = "تعذر قراءة الرصيد";
+
+  document.getElementById("targetAfter")
+    .textContent = "تعذر قراءة الرصيد";
+
+});
+
+
+// =====================================
+// مراقبة Claimable Balance
+// =====================================
+
+async function checkBalance() {
+
+  if (checking) return;
+
+  checking = true;
+
+  try {
+
+    const response = await fetch(
+      "https://api.mainnet.minepi.com/claimable_balances/" +
+      balanceId
+    );
+
+    if (response.status === 404) {
+
+      balanceResult.textContent =
+        "الرصيد غير موجود حاليًا أو تمت المطالبة به.";
+
+      return;
+
+    }
+
+    if (!response.ok) {
+
+      throw new Error(
+        "HTTP " + response.status
+      );
+
+    }
+
+    const data = await response.json();
+
+    checkCount++;
+
+    const claimant = data.claimants.find(
+      item => item.destination === oldWallet
+    );
+
+    if (!claimant) {
+
+      balanceResult.textContent =
+        "المستفيد غير موجود في هذه القائمة.";
+
+      return;
+
+    }
+
+    const unlockDate =
+      claimant.predicate?.not?.abs_before;
+
+    if (!unlockDate) {
+
+      balanceResult.textContent =
+        "تعذر قراءة موعد فك القفل.";
+
+      return;
+
+    }
+
+    const unlocked =
+      Date.now() >=
+      new Date(unlockDate).getTime();
+
+    balanceResult.textContent =
+
+      "عدد مرات الفحص: " + checkCount +
+
+      "\nآخر فحص: " +
+      new Date().toLocaleTimeString("ar-EG") +
+
+      "\nالرصيد: " + data.amount + " Pi" +
+
+      "\nالحالة: " +
+      (
+        unlocked
+          ? "تحقق الشرط الزمني للمطالبة"
+          : "ما زال مقفلاً"
+      ) +
+
+      "\nموعد فك القفل: " +
+      new Date(unlockDate).toLocaleString("ar-EG") +
+
+      "\nالفحص التالي بعد 15 ثانية.";
+
+  } catch (error) {
+
+    balanceResult.textContent =
+      "تعذر تحديث البيانات: " +
+      error.message;
+
+  } finally {
+
+    checking = false;
+
+  }
+
+}
+
+document
+  .getElementById("checkBalance")
+  .addEventListener("click", checkBalance);
+
+checkBalance();
+
+setInterval(checkBalance, 15000);
+
+
+// =====================================
+// تنفيذ الدفع وإتمام التحويل
+// =====================================
+
+sendButton.addEventListener(
   "click",
   async function() {
 
+    if (paymentInProgress) return;
+
+    paymentInProgress = true;
+    sendButton.disabled = true;
+
+    paymentResult.textContent =
+      "جاري إنشاء طلب الدفع...";
+
     try {
-      await refreshWalletBalances();
+
+      // حفظ الأرصدة قبل بدء العملية
+      const beforeBalances =
+        await captureBeforeBalances();
+
+      paymentResult.textContent =
+        "تم تسجيل الأرصدة قبل التحويل." +
+        "\nجاري إنشاء طلب الدفع...";
+
+      Pi.createPayment({
+
+        amount: 1.0,
+
+        memo:
+          "Transfer to target wallet: " +
+          targetWallet,
+
+        metadata: {
+          receiver: targetWallet
+        }
+
+      }, {
+
+        // =================================
+        // موافقة السيرفر على الدفع
+        // =================================
+
+        onReadyForServerApproval:
+          async function(paymentId) {
+
+            paymentResult.textContent =
+              "جاري انتظار موافقة Pi Network...";
+
+            try {
+
+              const response = await fetch(
+                SERVER_URL + "/approve",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+
+                  body: JSON.stringify({
+                    paymentId: paymentId
+                  })
+                }
+              );
+
+              const data = await response.json();
+
+              console.log(
+                "Approval response:",
+                data
+              );
+
+              if (
+                !response.ok ||
+                !data.success
+              ) {
+
+                throw new Error(
+                  data.error
+                    ? JSON.stringify(data.error)
+                    : "Server approval failed"
+                );
+
+              }
+
+              paymentResult.textContent =
+                "تمت موافقة السيرفر بنجاح." +
+                "\nيمكنك الآن مراجعة الدفع وإدخال كلمة مرور المحفظة.";
+
+            } catch (error) {
+
+              console.error(
+                "Approval error:",
+                error
+              );
+
+              paymentResult.textContent =
+                "لم تتم موافقة السيرفر بعد." +
+                "\nسبب الخطأ: " +
+                error.message;
+
+            }
+
+          },
+
+
+        // =================================
+        // إتمام الدفع ثم تحديث الأرصدة
+        // =================================
+
+        onReadyForServerCompletion:
+          async function(paymentId, txid) {
+
+            paymentResult.textContent =
+              "جاري إتمام المعاملة والتحقق منها...";
+
+            try {
+
+              // أولاً: إتمام الدفع على السيرفر
+              const response = await fetch(
+                SERVER_URL + "/complete",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Content-Type": "application/json"
+                  },
+
+                  body: JSON.stringify({
+                    paymentId: paymentId,
+                    txid: txid
+                  })
+                }
+              );
+
+              const data = await response.json();
+
+              console.log(
+                "Completion response:",
+                data
+              );
+
+              if (
+                !response.ok ||
+                !data.success
+              ) {
+
+                throw new Error(
+                  JSON.stringify(data.error)
+                );
+
+              }
+
+              // ثانيًا: بعد نجاح السيرفر ننتظر تحديث الشبكة
+              paymentResult.textContent =
+                "تم إتمام الدفع بنجاح من السيرفر." +
+                "\nجاري التحقق من وصول المبلغ للمحفظة المستهدفة...";
+
+              const balanceResultAfter =
+                await waitForTargetBalanceUpdate(
+                  beforeBalances.target
+                );
+
+              if (balanceResultAfter.updated) {
+
+                paymentResult.textContent =
+                  "تم إتمام الدفع والتحويل بنجاح!" +
+                  "\nتم تحديث أرصدة المحافظ تلقائيًا." +
+                  "\n\nTXID: " + txid;
+
+              } else {
+
+                paymentResult.textContent =
+                  "تم إتمام الدفع بنجاح من السيرفر." +
+                  "\nلكن لم تظهر زيادة رصيد المحفظة المستقبلة خلال فترة الانتظار." +
+                  "\nيرجى مراجعة TXID والتحقق من الشبكة." +
+                  "\n\nTXID: " + txid;
+
+              }
+
+            } catch (error) {
+
+              paymentResult.textContent =
+                "لم يتم تأكيد إتمام العملية بالكامل." +
+                "\nيرجى عدم اعتبار التحويل مكتملًا حتى يتم التحقق منه." +
+                "\nالتفاصيل: " + error.message;
+
+              console.error(
+                "Completion error:",
+                error
+              );
+
+            } finally {
+
+              paymentInProgress = false;
+              sendButton.disabled = false;
+
+            }
+
+          },
+
+
+        // =================================
+        // إلغاء الدفع
+        // =================================
+
+        onCancel: function(paymentId) {
+
+          paymentResult.textContent =
+            "تم إلغاء عملية الدفع من قبل المستخدم.";
+
+          paymentInProgress = false;
+          sendButton.disabled = false;
+
+        },
+
+
+        // =================================
+        // خطأ أثناء الدفع
+        // =================================
+
+        onError: function(error, payment) {
+
+          paymentResult.textContent =
+            "حدث خطأ أثناء الدفع: " +
+            error.message;
+
+          console.error(
+            "Payment error:",
+            error,
+            payment
+          );
+
+          paymentInProgress = false;
+          sendButton.disabled = false;
+
+        }
+
+      });
+
     } catch (error) {
-      alert("تعذر قراءة الأرصدة: " + error.message);
+
+      paymentResult.textContent =
+        "فشل بدء عملية الدفع: " +
+        error.message;
+
+      paymentInProgress = false;
+      sendButton.disabled = false;
+
     }
 
   }
 );
 
-// قراءة الأرصدة عند فتح التطبيق
-refreshWalletBalances().catch(error => {
-  console.error("Wallet balance error:", error);
-
-  document.getElementById("oldAfter").textContent =
-    "تعذر قراءة الرصيد";
-
-  document.getElementById("targetAfter").textContent =
-    "تعذر قراءة الرصيد";
-});
-
-  let checking = false;
-  let checkCount = 0;
-
-  async function checkBalance() {
-    if (checking) return;
-    checking = true;
-
-    try {
-      const response = await fetch(
-        "https://api.mainnet.minepi.com/claimable_balances/" + balanceId
-      );
-
-      if (response.status === 404) {
-        balanceResult.textContent = "الرصيد غير موجود حاليًا أو تمت المطالبة به.";
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
-      }
-
-      const data = await response.json();
-      checkCount++;
-
-      const claimant = data.claimants.find(
-        item => item.destination === oldWallet
-      );
-
-      if (!claimant) {
-        balanceResult.textContent = "المستفيد غير موجود في هذه القائمة.";
-        return;
-      }
-
-      const unlockDate = claimant.predicate?.not?.abs_before;
-
-      if (!unlockDate) {
-        balanceResult.textContent = "تعذر قراءة موعد فك القفل.";
-        return;
-      }
-
-      const unlocked = Date.now() >= new Date(unlockDate).getTime();
-
-      balanceResult.textContent = 
-        "عدد مرات الفحص: " + checkCount +
-        "\nآخر فحص: " + new Date().toLocaleTimeString("ar-EG") +
-        "\nالرصيد: " + data.amount + " Pi" +
-        "\nالحالة: " + (unlocked ? "تحقق الشرط الزمني للمطالبة" : "ما زال مقفلاً") +
-        "\nموعد فك القفل: " + new Date(unlockDate).toLocaleString("ar-EG") +
-        "\nالفحص التالي بعد 15 ثانية.";
-
-    } catch (error) {
-      balanceResult.textContent = "تعذر تحديث البيانات: " + error.message;
-    } finally {
-      checking = false;
-    }
-  }
-
-  document.getElementById("checkBalance").addEventListener("click", checkBalance);
-  checkBalance();
-  setInterval(checkBalance, 15000);
-
-  // تنفيذ طلب الدفع والتحويل مع ربطه بالسيرفر
-  document.getElementById("sendPi").addEventListener("click", async function () {
-    paymentResult.textContent = "جاري إنشاء طلب الدفع...";
-try {
-
-  // حفظ الرصيد قبل بدء الدفع
-  await captureBeforeBalances();
-
-  paymentResult.textContent =
-    "تم تسجيل الأرصدة قبل التحويل، جاري إنشاء طلب الدفع...";
-
-  const payment = Pi.createPayment({
-        amount: 1.0,
-        memo: "Transfer to target wallet: " + targetWallet,
-        metadata: { receiver: targetWallet },
-      }, {
-    
-
-onReadyForServerApproval: async function(paymentId) {
-
-  paymentResult.textContent =
-    "جاري انتظار موافقة Pi Network...";
-
-  try {
-
-    const response = await fetch(SERVER_URL + "/approve", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        paymentId: paymentId
-      })
-    });
-
-    const data = await response.json();
-
-    console.log("Approval response:", data);
-
-    if (!response.ok || !data.success) {
-      throw new Error(
-        data.error
-          ? JSON.stringify(data.error)
-          : "Server approval failed"
-      );
-    }
-
-    paymentResult.textContent =
-      "تمت موافقة السيرفر بنجاح." +
-      "\nيمكنك الآن مراجعة الدفع وإدخال كلمة مرور المحفظة.";
-
-  } catch (error) {
-
-    console.error("Approval error:", error);
-
-    paymentResult.textContent =
-      "لم تتم موافقة السيرفر بعد." +
-      "\nسبب الخطأ: " + error.message;
-
-  }
-},
-
-
-        
-onReadyForServerCompletion: async function(paymentId, txid) {
-  paymentResult.textContent =
-    "جاري إتمام المعاملة والتحقق منها...";
-
-  try {// تحديث الأرصدة بعد إتمام الدفع
-await new Promise(resolve => setTimeout(resolve, 3000));
-
-try {
-  await refreshWalletBalances(true);
-} catch (error) {
-  console.error("Balance update error:", error);
-  }
-    const response = await fetch(SERVER_URL + "/complete", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        paymentId: paymentId,
-        txid: txid
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(JSON.stringify(data.error));
-    }
-
-    paymentResult.textContent =
-      "تم إتمام الدفع بنجاح وتأكيده من Pi Network!" +
-      "\nTXID: " + txid;
-
-  } catch (err) {
-    paymentResult.textContent =
-      "لم يتم تأكيد إتمام الدفع من السيرفر." +
-      "\nيرجى عدم اعتبار العملية مكتملة حتى يتم التحقق منها." +
-      "\nالتفاصيل: " + err.message;
-
-    console.error("Completion error:", err);
-  }
-},
-
-        onCancel: function(paymentId) {
-          paymentResult.textContent = "تم إلغاء عملية الدفع من قبل المستخدم.";
-        },
-        onError: function(error, payment) {
-          paymentResult.textContent = "حدث خطأ أثناء الدفع: " + error.message;
-        }
-      });
-    } catch (error) {
-      paymentResult.textContent = "فشل بدء عملية الدفع: " + error.message;
-    }
-  });
 </script>
+
 </body>
 </html>

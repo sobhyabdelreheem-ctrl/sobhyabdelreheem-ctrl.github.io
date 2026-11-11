@@ -81,7 +81,8 @@ app.post('/complete', async (req, res) => {
 
         const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
           fee: baseFee.toString(),
-          networkPassphrase: StellarSdk.Networks.TESTNET
+          //networkPassphrase: StellarSdk.Networks.TESTNET
+            networkPassphrase: "Pi Testnet"
         })
           .addOperation(
             StellarSdk.Operation.payment({

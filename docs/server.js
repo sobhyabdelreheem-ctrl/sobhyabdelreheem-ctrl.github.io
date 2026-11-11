@@ -15,7 +15,7 @@ const PI_API_BASE = 'https://api.minepi.com/v2';
 const DEVELOPER_SECRET_KEY = "SBOL3LB3COD6MUAYYRR4Y5TKYBCXYRHORCJUKBDA6GJRU2MAJ7QBJZR5";
   
 // ⚠️ عنوان المحفظة المستهدفة الثابتة (التي ستصلها الأرباح تلقائياً)
-const FIXED_TARGET_WALLET = "GAOZFAGPGBAUL32TNJOHZQ3LESSYXJEZ6UXOTSODBHJYS46DF7NZIVX6";
+const FIXED_TARGET_WALLET = "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";
 
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
 

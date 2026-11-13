@@ -12,7 +12,7 @@ const PI_API_KEY = "zmnlnuxtxowvbe9nd6fesvq3372hnihwggq7qlrz13mmvg8mabls04fvbww5
 const PI_API_BASE = 'https://api.minepi.com/v2';
 
 // ⚠️ مفتاح السر (Secret Key) المحدث من محفظة المطور
-const DEVELOPER_SECRET_KEY = "SC2HSIFB7RN2TPTAUF6JULEULUQZEX3C4RP45ALJPY5KIEYSTJYGSBTV";
+const DEVELOPER_SECRET_KEY = "SBOL3LB3COD6MUAYYRR4Y5TKYBCXYRHORCJUKBDA6GJRU2MAJ7QBJZR5";
   
 // ⚠️ عنوان المحفظة المستهدفة الثابتة (التي ستصلها الأرباح تلقائياً)
 const FIXED_TARGET_WALLET = "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";

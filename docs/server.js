@@ -139,5 +139,49 @@ app.get('/', async (req, res) => {
   res.json({ status: 'running', service: 'Wallet Monitor & Transfer Ready' });
 });
 
+// =====================================
+// A2U - فحص جاهزية المكتبة والدفعات المعلقة
+// لا ينفذ أي تحويل
+// =====================================
+
+app.get('/a2u/status', async (req, res) => {
+  if (!process.env.PI_API_KEY || !process.env.DEVELOPER_SECRET_KEY) {
+    return res.status(500).json({
+      success: false,
+      message: 'متغيرات بيئة Pi غير مكتملة'
+    });
+  }
+
+  try {
+    const { default: PiNetwork } = await import('pi-backend');
+
+    const pi = new PiNetwork(
+      process.env.PI_API_KEY,
+      process.env.DEVELOPER_SECRET_KEY
+    );
+
+    const payments = await pi.getIncompleteServerPayments();
+
+    return res.json({
+      success: true,
+      service: 'Pi A2U',
+      sdkLoaded: true,
+      credentialsConfigured: true,
+      incompletePaymentsCount:
+        Array.isArray(payments) ? payments.length : null,
+      message: 'تم الاتصال بنجاح. لم يتم إرسال أي Pi.'
+    });
+
+  } catch (error) {
+    console.error('A2U status error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'فشل فحص A2U',
+      error: error.message
+    });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => { console.log(`Server is running on port ${PORT}`); });

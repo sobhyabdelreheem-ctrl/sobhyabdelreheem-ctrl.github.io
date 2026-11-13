@@ -154,7 +154,7 @@ let balancesAfter = {
 let checking = false;
 let checkCount = 0;
 let paymentInProgress = false;
-
+let currentPiUser = null;
 
 // =====================================
 // تهيئة Pi SDK
@@ -179,58 +179,44 @@ try {
 // =====================================
 
 async function handleLogin() {
-
-  result.textContent =
-    "جاري طلب المصادقة والصلاحيات...";
+  result.textContent = "جاري تسجيل الدخول...";
 
   try {
-
     const auth = await Pi.authenticate(
       ["username", "payments", "wallet_address"],
-
       function onIncompletePaymentFound(payment) {
-
-        console.log(
-          "Incomplete payment found:",
-          payment
-        );
-
+        console.log("Incomplete payment:", payment);
         paymentResult.textContent =
-          "تم العثور على عملية دفع غير مكتملة: " +
-          payment.identifier;
+          "توجد عملية دفع غير مكتملة: " + payment.identifier;
       }
     );
 
-    result.textContent =
-      "مرحباً بك، " + auth.user.username +
-      " (تم منح صلاحية المدفوعات بنجاح)";
+    currentPiUser = {
+      uid: auth.user.uid,
+      username: auth.user.username,
+      walletAddress: auth.user.wallet_address || "",
+      accessToken: auth.accessToken
+    };
 
-    console.log(
-      "Authentication user:",
-      auth.user
-    );
-
-    const walletAddress =
-      auth.user.wallet_address;
-
-    if (walletAddress) {
-      console.log(
-        "Pi wallet address:",
-        walletAddress
-      );
-    } else {
-      console.log(
-        "لم يصل عنوان المحفظة ضمن بيانات التسجيل"
-      );
+    if (!currentPiUser.uid || !currentPiUser.accessToken) {
+      throw new Error("لم يتم استلام UID أو Access Token");
     }
 
-  } catch (error) {
-
     result.textContent =
-      "فشل تسجيل الدخول: " + error.message;
+      "تم تسجيل الدخول بنجاح" +
+      "\nالاسم: " + currentPiUser.username +
+      "\nUID: " + currentPiUser.uid +
+      "\nالمحفظة: " +
+      (currentPiUser.walletAddress || "لم يصل عنوان المحفظة");
 
+    console.log("Pi user UID:", currentPiUser.uid);
+
+  } catch (error) {
+    currentPiUser = null;
+    result.textContent = "فشل تسجيل الدخول: " + error.message;
   }
 }
+
 
 
 // =====================================

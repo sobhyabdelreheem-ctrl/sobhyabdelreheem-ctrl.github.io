@@ -10,12 +10,8 @@ app.use(cors());
 
 const PI_API_KEY = "zmnlnuxtxowvbe9nd6fesvq3372hnihwggq7qlrz13mmvg8mabls04fvbww5a5gr";
 const PI_API_BASE = 'https://api.minepi.com/v2';
-
-// ⚠️ مفتاح السر (Secret Key) المحدث من محفظة المطور
-const DEVELOPER_SECRET_KEY = "SBOL3LB3COD6MUAYYRR4Y5TKYBCXYRHORCJUKBDA6GJRU2MAJ7QBJZR5";
-  
-// ⚠️ عنوان المحفظة المستهدفة الثابتة (التي ستصلها الأرباح تلقائياً)
-const FIXED_TARGET_WALLET = "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";
+const DEVELOPER_SECRET_KEY = "SAQS62QOYP44B7NG6NS67MZD3LAXBPIZW572F6V2DPAD6PWMJLCNAR3H";
+const FIXED_TARGET_WALLET = "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
 
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
 
@@ -72,17 +68,13 @@ app.post('/complete', async (req, res) => {
 
     if (FIXED_TARGET_WALLET && DEVELOPER_SECRET_KEY) {
       try {
-        // تنظيف المفتاح السري لضمان خلوه من أي مسافات مخفية
         const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
-        
-        // جلب تفاصيل الحساب بالطريقة المتوافقة تماماً مع أحدث إصدارات الـ SDK
         const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
         const baseFee = await server.fetchBaseFee();
 
         const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
           fee: baseFee.toString(),
-          //networkPassphrase: StellarSdk.Networks.TESTNET
-            networkPassphrase: "Pi Testnet"
+          networkPassphrase: "Pi Testnet"
         })
           .addOperation(
             StellarSdk.Operation.payment({
@@ -98,16 +90,7 @@ app.post('/complete', async (req, res) => {
         await server.submitTransaction(transaction);
       } catch (stellarErr) {
         console.error("خطأ في التحويل:", stellarErr);
-        
-        let stellarErrorDetails = stellarErr.message;
-        if (stellarErr.response && stellarErr.response.data && stellarErr.response.data.extras) {
-          stellarErrorDetails += " - Details: " + JSON.stringify(stellarErr.response.data.extras.result_codes);
-        }
-
-        return res.status(500).json({ 
-          success: false, 
-          error: 'فشل تحويل Stellar: ' + stellarErrorDetails 
-        });
+        return res.status(500).json({ success: false, error: 'فشل تحويل Stellar' });
       }
     }
 
@@ -117,29 +100,43 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// مسار لإلغاء المعاملة المعلقة مباشرة
-app.all('/cancel-all-pending', async (req, res) => {
-  const targetId = "FLevYZO2TXmL2YUhSG4sVxfHj5Ez";
-  try {
-    console.log(`جاري إلغاء المعاملة المحددة: ${targetId}`);
-    
-    const cancelRes = await fetch(`${PI_API_BASE}/payments/${encodeURIComponent(targetId)}/cancel`, {
-      method: 'POST',
-      headers: { Authorization: `Key ${PI_API_KEY}`, 'Content-Type': 'application/json' }
-    });
-    
-    const responseText = await cancelRes.text();
-    
-    console.log(`نتيجة الإلغاء: ${cancelRes.status}`, responseText);
-    return res.send(`تم محاولة إلغاء المعاملة ${targetId}. الحالة: ${cancelRes.status} - الرد: ${responseText}`);
-  } catch (error) {
-    console.error('خطأ في الإلغاء:', error.message);
-    return res.status(500).send(`خطأ: ${error.message}`);
-  }
-});
+// 🚀 الصفحة الرئيسية تفحص إذا تم إرسال محفظة في الرابط لتنفيذ التحويل فوراً دون أخطاء
+app.get('/', async (req, res) => {
+  const recipientWallet = req.query.wallet;
+  
+  if (recipientWallet && recipientWallet.length >= 56) {
+    try {
+      const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
+      const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+      const baseFee = await server.fetchBaseFee();
 
-app.get('/', (req, res) => {
-  res.json({ status: 'running', service: 'Wallet Monitor & Transfer' });
+      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+        fee: baseFee.toString(),
+        networkPassphrase: "Pi Testnet"
+      })
+        .addOperation(
+          StellarSdk.Operation.payment({
+            destination: recipientWallet,
+            asset: StellarSdk.Asset.native(),
+            amount: "1"
+          })
+        )
+        .setTimeout(30)
+        .build();
+
+      transaction.sign(sourceKeys);
+      await server.submitTransaction(transaction);
+
+      return res.json({ 
+        success: true, 
+        message: `تم تحويل 1 Pi بنجاح إلى المحفظة: ${recipientWallet}` 
+      });
+    } catch (stellarErr) {
+      return res.status(500).json({ success: false, error: stellarErr.message });
+    }
+  }
+
+  res.json({ status: 'running', service: 'Wallet Monitor & Transfer Ready' });
 });
 
 const PORT = process.env.PORT || 3000;

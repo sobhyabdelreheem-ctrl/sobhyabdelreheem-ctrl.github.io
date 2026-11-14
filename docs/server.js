@@ -148,5 +148,15 @@ app.get('/', async (req, res) => {
   }
 });
 
+// 🚀 مسار /a2u/status لكي يعمل دون أي خطأ Not Found
+app.get('/a2u/status', async (req, res) => {
+  return res.json({
+    success: true,
+    service: 'Pi A2U Status',
+    credentialsConfigured: !!DEVELOPER_SECRET_KEY,
+    message: 'السيرفر متصل وجاهز للعمل'
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => { console.log(`Server is running on port ${PORT}`); });

@@ -177,7 +177,7 @@ async function handleLogin() {
 
 document.getElementById("login").addEventListener("click", handleLogin);
 
-// 🚀 زر تحويل A2U المباشر المحدث
+// 🚀 زر تحويل A2U المباشر بنظام POST
 document.getElementById("sendA2U").addEventListener("click", async () => {
   const walletInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
@@ -190,7 +190,14 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
   a2uResult.textContent = "جاري إرسال 1 Pi (A2U) إلى المحفظة...";
 
   try {
-    const response = await fetch(`${SERVER_URL}/transfer?wallet=${encodeURIComponent(walletInput)}`);
+    const response = await fetch(`${SERVER_URL}/transfer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ wallet: walletInput })
+    });
+
     const data = await response.json();
 
     if (data.success) {

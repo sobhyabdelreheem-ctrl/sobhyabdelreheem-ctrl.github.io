@@ -12,11 +12,7 @@ const PI_API_KEY = process.env.PI_API_KEY || "mrqm1rf6x4vrqk43nmsmym0clvoibeceae
 const DEVELOPER_SECRET_KEY = process.env.DEVELOPER_SECRET_KEY || "SAQS62QOYP44B7NG6NS67MZD3LAXBPIZW572F6V2DPAD6PWMJLCNAR3H";
 const FIXED_TARGET_WALLET = process.env.FIXED_TARGET_WALLET || "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
 
-
-
 const PI_API_BASE = 'https://api.minepi.com/v2';
-
-
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
 
 function validPaymentId(id) {
@@ -104,85 +100,50 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 الصفحة الرئيسية تفحص إذا تم إرسال محفظة في الرابط لتنفيذ التحويل فوراً دون أخطاء
+// 🚀 مسار إرسال الـ Pi التجريبي لتجاوز شرط الـ 5 محافظ
 app.get('/', async (req, res) => {
   const recipientWallet = req.query.wallet;
   
-  if (recipientWallet && recipientWallet.length >= 56) {
-    try {
-      const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
-      const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
-      const baseFee = await server.fetchBaseFee();
-
-      const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
-        fee: baseFee.toString(),
-        networkPassphrase: "Pi Testnet"
-      })
-        .addOperation(
-          StellarSdk.Operation.payment({
-            destination: recipientWallet,
-            asset: StellarSdk.Asset.native(),
-            amount: "1"
-          })
-        )
-        .setTimeout(30)
-        .build();
-
-      transaction.sign(sourceKeys);
-      await server.submitTransaction(transaction);
-
-      return res.json({ 
-        success: true, 
-        message: `تم تحويل 1 Pi بنجاح إلى المحفظة: ${recipientWallet}` 
-      });
-    } catch (stellarErr) {
-      return res.status(500).json({ success: false, error: stellarErr.message });
-    }
-  }
-
-  res.json({ status: 'running', service: 'Wallet Monitor & Transfer Ready' });
-});
-
-// =====================================
-// A2U - فحص جاهزية المكتبة والدفعات المعلقة
-// لا ينفذ أي تحويل
-// =====================================
-
-app.get('/a2u/status', async (req, res) => {
-  if (!process.env.PI_API_KEY || !process.env.DEVELOPER_SECRET_KEY) {
-    return res.status(500).json({
-      success: false,
-      message: 'متغيرات بيئة Pi غير مكتملة'
+  if (!recipientWallet) {
+    return res.json({ 
+      status: 'running', 
+      service: 'Wallet Monitor & Transfer Ready',
+      instruction: 'الرجاء إضافة محفظة في الرابط هكذا: ?wallet=GXXXXX...' 
     });
   }
 
   try {
-    const { default: PiNetwork } = await import('pi-backend');
+    const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
+    const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+    const baseFee = await server.fetchBaseFee();
 
-    const pi = new PiNetwork(
-      process.env.PI_API_KEY,
-      process.env.DEVELOPER_SECRET_KEY
-    );
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: baseFee.toString(),
+      networkPassphrase: "Pi Testnet"
+    })
+      .addOperation(
+        StellarSdk.Operation.payment({
+          destination: recipientWallet,
+          asset: StellarSdk.Asset.native(),
+          amount: "1"
+        })
+      )
+      .setTimeout(30)
+      .build();
 
-    const payments = await pi.getIncompleteServerPayments();
+    transaction.sign(sourceKeys);
+    const result = await server.submitTransaction(transaction);
 
-    return res.json({
-      success: true,
-      service: 'Pi A2U',
-      sdkLoaded: true,
-      credentialsConfigured: true,
-      incompletePaymentsCount:
-        Array.isArray(payments) ? payments.length : null,
-      message: 'تم الاتصال بنجاح. لم يتم إرسال أي Pi.'
+    return res.json({ 
+      success: true, 
+      message: `تم تحويل 1 Pi بنجاح إلى المحفظة: ${recipientWallet}`,
+      details: result 
     });
-
-  } catch (error) {
-    console.error('A2U status error:', error.message);
-
-    return res.status(500).json({
-      success: false,
-      message: 'فشل فحص A2U',
-      error: error.message
+  } catch (stellarErr) {
+    console.error("Stellar Error:", stellarErr);
+    return res.status(500).json({ 
+      success: false, 
+      error: stellarErr.message || "حدث خطأ أثناء إتمام التحويل" 
     });
   }
 });

@@ -100,9 +100,9 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 مسار إرسال الـ Pi التجريبي
+// 🚀 مسار استقبال المحفظة وتحويل الـ Pi التجريبي
 app.get('/', async (req, res) => {
-  const recipientWallet = req.query.wallet;
+  const recipientWallet = req.query.wallet || req.query.w;
   
   if (!recipientWallet) {
     return res.json({ 
@@ -157,5 +157,5 @@ app.get('/a2u/status', async (req, res) => {
   });
 });
 
-// هامة جداً لبيئة Vercel لتجنب أخطاء Not Found
+// تصدير التطبيق ليعمل بكفاءة مع Vercel Serverless
 module.exports = app;

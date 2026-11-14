@@ -100,12 +100,12 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 مسار تحويل A2U المباشر بنظام POST الآمن
+// 🚀 مسار تحويل A2U المباشر مع استلام المحافظ من الواجهة
 app.post('/transfer', async (req, res) => {
-  const { wallet } = req.body || {};
+  const { wallet, senderWallet } = req.body || {};
   
   if (!wallet) {
-    return res.status(400).json({ success: false, error: 'الرجاء إدخال عنوان المحفظة' });
+    return res.status(400).json({ success: false, error: 'الرجاء إدخال عنوان المحفظة المستقبلة' });
   }
 
   try {

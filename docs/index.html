@@ -84,7 +84,7 @@
 
   <hr>
 
-  <!-- 🚀 قسم تحويل A2U المباشر (من محفظة المطور للمستخدم لتجاوز متطلبات البوابة) -->
+  <!-- 🚀 قسم تحويل A2U المباشر -->
   <h3 style="color: #2e7d32;">تنفيذ تحويل A2U مباشر</h3>
   <input type="text" id="customWallet" placeholder="أدخل محفظة المستلم (تبدأ بـ G)" style="width: 90%; padding: 10px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;" />
   <br>
@@ -123,81 +123,38 @@
 
 <script>
 
-// =====================================
-// إعدادات التطبيق
-// =====================================
-
-const SERVER_URL =
-  "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
-
-const TESTNET_HORIZON =
-  "https://api.testnet.minepi.com";
-
-const balanceId =
-  "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
-
-const oldWallet =
-  "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
-
-const targetWallet =
-  "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";
+const SERVER_URL = "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
+const TESTNET_HORIZON = "https://api.testnet.minepi.com";
+const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
+const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
+const targetWallet = "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";
 
 const status = document.getElementById("status");
 const result = document.getElementById("result");
 const balanceResult = document.getElementById("balanceResult");
 const paymentResult = document.getElementById("paymentResult");
-
 const sendButton = document.getElementById("sendPi");
 
-let balancesBefore = {
-  old: null,
-  target: null
-};
-
-let balancesAfter = {
-  old: null,
-  target: null
-};
-
+let balancesBefore = { old: null, target: null };
+let balancesAfter = { old: null, target: null };
 let checking = false;
 let checkCount = 0;
 let paymentInProgress = false;
 let currentPiUser = null;
 
-// =====================================
-// تهيئة Pi SDK
-// =====================================
-
 try {
-  Pi.init({
-    version: "2.0",
-    sandbox: true
-  });
-
+  Pi.init({ version: "2.0", sandbox: true });
   status.textContent = "Pi SDK initialized successfully.";
-
 } catch (error) {
-  status.textContent =
-    "SDK initialization error: " + error.message;
+  status.textContent = "SDK initialization error: " + error.message;
 }
-
-
-// =====================================
-// تسجيل الدخول
-// =====================================
 
 async function handleLogin() {
   result.textContent = "جاري تسجيل الدخول...";
-
   try {
-    const auth = await Pi.authenticate(
-      ["username", "payments", "wallet_address"],
-      function onIncompletePaymentFound(payment) {
-        console.log("Incomplete payment:", payment);
-        paymentResult.textContent =
-          "توجد عملية دفع غير مكتملة: " + payment.identifier;
-      }
-    );
+    const auth = await Pi.authenticate(["username", "payments", "wallet_address"], function(payment) {
+      console.log("Incomplete payment:", payment);
+    });
 
     currentPiUser = {
       uid: auth.user.uid,
@@ -206,18 +163,11 @@ async function handleLogin() {
       accessToken: auth.accessToken
     };
 
-    if (!currentPiUser.uid || !currentPiUser.accessToken) {
-      throw new Error("لم يتم استلام UID أو Access Token");
-    }
-
     result.textContent =
       "تم تسجيل الدخول بنجاح" +
       "\nالاسم: " + currentPiUser.username +
       "\nUID: " + currentPiUser.uid +
-      "\nالمحفظة: " +
-      (currentPiUser.walletAddress || "لم يصل عنوان المحفظة");
-
-    console.log("Pi user UID:", currentPiUser.uid);
+      "\nالمحفظة: " + (currentPiUser.walletAddress || "لم يصل عنوان المحفظة");
 
   } catch (error) {
     currentPiUser = null;
@@ -225,15 +175,9 @@ async function handleLogin() {
   }
 }
 
-document
-  .getElementById("login")
-  .addEventListener("click", handleLogin);
+document.getElementById("login").addEventListener("click", handleLogin);
 
-
-// =====================================
-// تنفيذ تحويل A2U المباشر من الزر الأخضر
-// =====================================
-
+// 🚀 زر تحويل A2U المباشر المحدث
 document.getElementById("sendA2U").addEventListener("click", async () => {
   const walletInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
@@ -246,7 +190,7 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
   a2uResult.textContent = "جاري إرسال 1 Pi (A2U) إلى المحفظة...";
 
   try {
-    const response = await fetch(`${SERVER_URL}/?wallet=${encodeURIComponent(walletInput)}`);
+    const response = await fetch(`${SERVER_URL}/transfer?wallet=${encodeURIComponent(walletInput)}`);
     const data = await response.json();
 
     if (data.success) {
@@ -259,213 +203,41 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
   }
 });
 
-
-// =====================================
-// عرض عناوين المحافظ
-// =====================================
-
-document.getElementById("oldWalletAddress")
-  .textContent = oldWallet;
-
-document.getElementById("targetWalletAddress")
-  .textContent = targetWallet;
-
-
-// =====================================
-// قراءة رصيد المحفظة من Testnet
-// =====================================
+document.getElementById("oldWalletAddress").textContent = oldWallet;
+document.getElementById("targetWalletAddress").textContent = targetWallet;
 
 async function getWalletBalance(walletAddress) {
-
-  const response = await fetch(
-    TESTNET_HORIZON +
-    "/accounts/" +
-    encodeURIComponent(walletAddress)
-  );
-
-  if (response.status === 404) {
-    throw new Error(
-      "المحفظة غير موجودة على Testnet"
-    );
-  }
-
-  if (!response.ok) {
-    throw new Error(
-      "خطأ في قراءة المحفظة: HTTP " +
-      response.status
-    );
-  }
-
+  const response = await fetch(TESTNET_HORIZON + "/accounts/" + encodeURIComponent(walletAddress));
+  if (response.status === 404) throw new Error("المحفظة غير موجودة على Testnet");
+  if (!response.ok) throw new Error("خطأ في قراءة المحفظة: HTTP " + response.status);
   const account = await response.json();
-
-  const nativeBalance =
-    account.balances.find(
-      item => item.asset_type === "native"
-    );
-
-  return nativeBalance
-    ? Number(nativeBalance.balance)
-    : 0;
+  const nativeBalance = account.balances.find(item => item.asset_type === "native");
+  return nativeBalance ? Number(nativeBalance.balance) : 0;
 }
-
-
-// =====================================
-// تنسيق الرصيد
-// =====================================
 
 function formatPi(value) {
-
-  return Number(value).toFixed(7) +
-    " Test-Pi";
-
+  return Number(value).toFixed(7) + " Test-Pi";
 }
 
-
-// =====================================
-// عرض الأرصدة والتغيرات
-// =====================================
-
-function displayWalletBalances(
-  oldBalance,
-  targetBalance,
-  afterPayment = false
-) {
-
-  document.getElementById("oldAfter")
-    .textContent = formatPi(oldBalance);
-
-  document.getElementById("targetAfter")
-    .textContent = formatPi(targetBalance);
-
-  balancesAfter.old = oldBalance;
-  balancesAfter.target = targetBalance;
-
-  if (
-    afterPayment &&
-    balancesBefore.old !== null
-  ) {
-
-    document.getElementById("oldChange")
-      .textContent =
-      formatPi(oldBalance - balancesBefore.old);
-
-  }
-
-  if (
-    afterPayment &&
-    balancesBefore.target !== null
-  ) {
-
-    document.getElementById("targetChange")
-      .textContent =
-      formatPi(targetBalance - balancesBefore.target);
-
-  }
-
+async function refreshWalletBalances() {
+  const oldBalance = await getWalletBalance(oldWallet);
+  const targetBalance = await getWalletBalance(targetWallet);
+  document.getElementById("oldAfter").textContent = formatPi(oldBalance);
+  document.getElementById("targetAfter").textContent = formatPi(targetBalance);
+  return { old: oldBalance, target: targetBalance };
 }
 
-
-// =====================================
-// قراءة رصيد المحفظتين
-// =====================================
-
-async function refreshWalletBalances(
-  afterPayment = false
-) {
-
-  const oldBalance =
-    await getWalletBalance(oldWallet);
-
-  const targetBalance =
-    await getWalletBalance(targetWallet);
-
-  displayWalletBalances(
-    oldBalance,
-    targetBalance,
-    afterPayment
-  );
-
-  return {
-    old: oldBalance,
-    target: targetBalance
-  };
-
-}
-
-
-// =====================================
-// تسجيل الأرصدة قبل التحويل
-// =====================================
-
-async function captureBeforeBalances() {
-
-  const balances =
+document.getElementById("refreshWallets").addEventListener("click", async function() {
+  try {
     await refreshWalletBalances();
-
-  balancesBefore.old = balances.old;
-  balancesBefore.target = balances.target;
-
-  document.getElementById("oldBefore")
-    .textContent = formatPi(balances.old);
-
-  document.getElementById("targetBefore")
-    .textContent = formatPi(balances.target);
-
-  document.getElementById("oldChange")
-    .textContent = "--";
-
-  document.getElementById("targetChange")
-    .textContent = "--";
-
-  return balances;
-
-}
-
-
-// =====================================
-// زر تحديث الأرصدة يدويًا
-// =====================================
-
-document
-  .getElementById("refreshWallets")
-  .addEventListener("click", async function() {
-
-    try {
-
-      await refreshWalletBalances();
-
-      paymentResult.textContent =
-        "تم تحديث أرصدة المحافظ بنجاح.";
-
-    } catch (error) {
-
-      alert(
-        "تعذر قراءة الأرصدة: " +
-        error.message
-      );
-
-    }
-
-  });
-
-
-// =====================================
-// قراءة الأرصدة عند فتح التطبيق
-// =====================================
+    paymentResult.textContent = "تم تحديث أرصدة المحافظ بنجاح.";
+  } catch (error) {
+    alert("تعذر قراءة الأرصدة: " + error.message);
+  }
+});
 
 refreshWalletBalances().catch(error => {
-
-  console.error(
-    "Wallet balance error:",
-    error
-  );
-
-  document.getElementById("oldAfter")
-    .textContent = "تعذر قراءة الرصيد";
-
-  document.getElementById("targetAfter")
-    .textContent = "تعذر قراءة الرصيد";
-
+  console.error("Wallet balance error:", error);
 });
 
 </script>

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -54,7 +53,7 @@
       background-color: #4a148c;
     }
 
-    #balanceResult, #result, #paymentResult {
+    #balanceResult, #result, #paymentResult, #a2uResult {
       white-space: pre-line;
       font-size: 16px;
       line-height: 1.8;
@@ -85,13 +84,22 @@
 
   <hr>
 
+  <!-- 🚀 قسم تحويل A2U المباشر (من محفظة المطور للمستخدم لتجاوز متطلبات البوابة) -->
+  <h3 style="color: #2e7d32;">تنفيذ تحويل A2U مباشر</h3>
+  <input type="text" id="customWallet" placeholder="أدخل محفظة المستلم (تبدأ بـ G)" style="width: 90%; padding: 10px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;" />
+  <br>
+  <button id="sendA2U" style="background-color: #2e7d32;">إرسال 1 Pi (A2U) للمحفظة</button>
+  <p id="a2uResult">جاهز لتنفيذ التحويل...</p>
+
+  <hr>
+
   <button id="checkBalance">فحص الرصيد الآن</button>
   <p id="balanceResult">في انتظار الفحص...</p>
 
   <hr>
 
-  <button id="sendPi">إرسال 1 Pi إلى المحفظة المستهدفة</button>
-  <p id="paymentResult">جاهز لعملية التحويل...</p>
+  <button id="sendPi">إرسال 1 Pi (U2A تقليدي)</button>
+  <p id="paymentResult">جاهز لعملية الدفع...</p>
 
   <hr>
 
@@ -217,59 +225,39 @@ async function handleLogin() {
   }
 }
 
-
-
-// =====================================
-// فحص المحافظ المرتبطة بحساب Pi
-// =====================================
-
-async function checkPiWallets() {
-
-  try {
-
-    const walletResult =
-      await Pi.Wallet.getUserMigratedWalletAddresses();
-
-    if (
-      !walletResult ||
-      !Array.isArray(walletResult.wallets)
-    ) {
-      throw new Error(
-        "لم يتم إرجاع قائمة المحافظ"
-      );
-    }
-
-    const wallets = walletResult.wallets;
-
-    console.log("Pi Wallets:", wallets);
-
-    alert(
-      "عدد المحافظ: " + wallets.length +
-      "\n\n" +
-      wallets.map((wallet, index) =>
-        "المحفظة " + (index + 1) +
-        ": " + wallet.publicKey
-      ).join("\n\n")
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Wallet check error:",
-      error
-    );
-
-    alert(
-      "حدث خطأ أثناء قراءة المحافظ: " +
-      error.message
-    );
-
-  }
-}
-
 document
   .getElementById("login")
   .addEventListener("click", handleLogin);
+
+
+// =====================================
+// تنفيذ تحويل A2U المباشر من الزر الأخضر
+// =====================================
+
+document.getElementById("sendA2U").addEventListener("click", async () => {
+  const walletInput = document.getElementById("customWallet").value.trim();
+  const a2uResult = document.getElementById("a2uResult");
+
+  if (!walletInput || walletInput.length < 56) {
+    alert("الرجاء إدخال عنوان محفظة صحيح يبدأ بـ G ويحتوي على 56 حرفاً");
+    return;
+  }
+
+  a2uResult.textContent = "جاري إرسال 1 Pi (A2U) إلى المحفظة...";
+
+  try {
+    const response = await fetch(`${SERVER_URL}/?wallet=${encodeURIComponent(walletInput)}`);
+    const data = await response.json();
+
+    if (data.success) {
+      a2uResult.textContent = "✅ " + data.message;
+    } else {
+      a2uResult.textContent = "❌ خطأ: " + (data.error || JSON.stringify(data.error));
+    }
+  } catch (err) {
+    a2uResult.textContent = "❌ خطأ في الاتصال: " + err.message;
+  }
+});
 
 
 // =====================================
@@ -435,78 +423,6 @@ async function captureBeforeBalances() {
 
 
 // =====================================
-// الانتظار حتى يظهر التحويل على الشبكة
-// =====================================
-
-function delay(milliseconds) {
-
-  return new Promise(resolve =>
-    setTimeout(resolve, milliseconds)
-  );
-
-}
-
-async function waitForTargetBalanceUpdate(
-  previousTargetBalance
-) {
-
-  const maxAttempts = 10;
-  const interval = 2000;
-
-  for (
-    let attempt = 1;
-    attempt <= maxAttempts;
-    attempt++
-  ) {
-
-    paymentResult.textContent =
-      "تم تأكيد الدفع من السيرفر." +
-      "\nجاري تحديث أرصدة المحافظ..." +
-      "\nمحاولة التحديث: " +
-      attempt + " من " + maxAttempts;
-
-    try {
-
-      const balances =
-        await refreshWalletBalances(true);
-
-      // ننتظر ظهور زيادة فعلية في المحفظة المستقبلة
-      if (
-        balances.target >
-        previousTargetBalance + 0.00000005
-      ) {
-
-        return {
-          updated: true,
-          balances: balances
-        };
-
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Balance refresh attempt failed:",
-        error
-      );
-
-    }
-
-    if (attempt < maxAttempts) {
-      await delay(interval);
-    }
-
-  }
-
-  return {
-    updated: false,
-    balances: balancesAfter
-  };
-
-}
-
-
-// =====================================
 // زر تحديث الأرصدة يدويًا
 // =====================================
 
@@ -551,374 +467,6 @@ refreshWalletBalances().catch(error => {
     .textContent = "تعذر قراءة الرصيد";
 
 });
-
-
-// =====================================
-// مراقبة Claimable Balance
-// =====================================
-
-async function checkBalance() {
-
-  if (checking) return;
-
-  checking = true;
-
-  try {
-
-    const response = await fetch(
-      "https://api.mainnet.minepi.com/claimable_balances/" +
-      balanceId
-    );
-
-    if (response.status === 404) {
-
-      balanceResult.textContent =
-        "الرصيد غير موجود حاليًا أو تمت المطالبة به.";
-
-      return;
-
-    }
-
-    if (!response.ok) {
-
-      throw new Error(
-        "HTTP " + response.status
-      );
-
-    }
-
-    const data = await response.json();
-
-    checkCount++;
-
-    const claimant = data.claimants.find(
-      item => item.destination === oldWallet
-    );
-
-    if (!claimant) {
-
-      balanceResult.textContent =
-        "المستفيد غير موجود في هذه القائمة.";
-
-      return;
-
-    }
-
-    const unlockDate =
-      claimant.predicate?.not?.abs_before;
-
-    if (!unlockDate) {
-
-      balanceResult.textContent =
-        "تعذر قراءة موعد فك القفل.";
-
-      return;
-
-    }
-
-    const unlocked =
-      Date.now() >=
-      new Date(unlockDate).getTime();
-
-    balanceResult.textContent =
-
-      "عدد مرات الفحص: " + checkCount +
-
-      "\nآخر فحص: " +
-      new Date().toLocaleTimeString("ar-EG") +
-
-      "\nالرصيد: " + data.amount + " Pi" +
-
-      "\nالحالة: " +
-      (
-        unlocked
-          ? "تحقق الشرط الزمني للمطالبة"
-          : "ما زال مقفلاً"
-      ) +
-
-      "\nموعد فك القفل: " +
-      new Date(unlockDate).toLocaleString("ar-EG") +
-
-      "\nالفحص التالي بعد 15 ثانية.";
-
-  } catch (error) {
-
-    balanceResult.textContent =
-      "تعذر تحديث البيانات: " +
-      error.message;
-
-  } finally {
-
-    checking = false;
-
-  }
-
-}
-
-document
-  .getElementById("checkBalance")
-  .addEventListener("click", checkBalance);
-
-checkBalance();
-
-setInterval(checkBalance, 15000);
-
-
-// =====================================
-// تنفيذ الدفع وإتمام التحويل
-// =====================================
-
-sendButton.addEventListener(
-  "click",
-  async function() {
-
-    if (paymentInProgress) return;
-
-    paymentInProgress = true;
-    sendButton.disabled = true;
-
-    paymentResult.textContent =
-      "جاري إنشاء طلب الدفع...";
-
-    try {
-
-      // حفظ الأرصدة قبل بدء العملية
-      const beforeBalances =
-        await captureBeforeBalances();
-
-      paymentResult.textContent =
-        "تم تسجيل الأرصدة قبل التحويل." +
-        "\nجاري إنشاء طلب الدفع...";
-
-      Pi.createPayment({
-
-        amount: 1.0,
-
-        memo:
-          "Transfer to target wallet: " +
-          targetWallet,
-
-        metadata: {
-          receiver: targetWallet
-        }
-
-      }, {
-
-        // =================================
-        // موافقة السيرفر على الدفع
-        // =================================
-
-        onReadyForServerApproval:
-          async function(paymentId) {
-
-            paymentResult.textContent =
-              "جاري انتظار موافقة Pi Network...";
-
-            try {
-
-              const response = await fetch(
-                SERVER_URL + "/approve",
-                {
-                  method: "POST",
-
-                  headers: {
-                    "Content-Type": "application/json"
-                  },
-
-                  body: JSON.stringify({
-                    paymentId: paymentId
-                  })
-                }
-              );
-
-              const data = await response.json();
-
-              console.log(
-                "Approval response:",
-                data
-              );
-
-              if (
-                !response.ok ||
-                !data.success
-              ) {
-
-                throw new Error(
-                  data.error
-                    ? JSON.stringify(data.error)
-                    : "Server approval failed"
-                );
-
-              }
-
-              paymentResult.textContent =
-                "تمت موافقة السيرفر بنجاح." +
-                "\nيمكنك الآن مراجعة الدفع وإدخال كلمة مرور المحفظة.";
-
-            } catch (error) {
-
-              console.error(
-                "Approval error:",
-                error
-              );
-
-              paymentResult.textContent =
-                "لم تتم موافقة السيرفر بعد." +
-                "\nسبب الخطأ: " +
-                error.message;
-
-            }
-
-          },
-
-
-        // =================================
-        // إتمام الدفع ثم تحديث الأرصدة
-        // =================================
-
-        onReadyForServerCompletion:
-          async function(paymentId, txid) {
-
-            paymentResult.textContent =
-              "جاري إتمام المعاملة والتحقق منها...";
-
-            try {
-
-              // أولاً: إتمام الدفع على السيرفر
-              const response = await fetch(
-                SERVER_URL + "/complete",
-                {
-                  method: "POST",
-
-                  headers: {
-                    "Content-Type": "application/json"
-                  },
-
-                  body: JSON.stringify({
-                    paymentId: paymentId,
-                    txid: txid
-                  })
-                }
-              );
-
-              const data = await response.json();
-
-              console.log(
-                "Completion response:",
-                data
-              );
-
-              if (
-                !response.ok ||
-                !data.success
-              ) {
-
-                throw new Error(
-                  JSON.stringify(data.error)
-                );
-
-              }
-
-              // ثانيًا: بعد نجاح السيرفر ننتظر تحديث الشبكة
-              paymentResult.textContent =
-                "تم إتمام الدفع بنجاح من السيرفر." +
-                "\nجاري التحقق من وصول المبلغ للمحفظة المستهدفة...";
-
-              const balanceResultAfter =
-                await waitForTargetBalanceUpdate(
-                  beforeBalances.target
-                );
-
-              if (balanceResultAfter.updated) {
-
-                paymentResult.textContent =
-                  "تم إتمام الدفع والتحويل بنجاح!" +
-                  "\nتم تحديث أرصدة المحافظ تلقائيًا." +
-                  "\n\nTXID: " + txid;
-
-              } else {
-
-                paymentResult.textContent =
-                  "تم إتمام الدفع بنجاح من السيرفر." +
-                  "\nلكن لم تظهر زيادة رصيد المحفظة المستقبلة خلال فترة الانتظار." +
-                  "\nيرجى مراجعة TXID والتحقق من الشبكة." +
-                  "\n\nTXID: " + txid;
-
-              }
-
-            } catch (error) {
-
-              paymentResult.textContent =
-                "لم يتم تأكيد إتمام العملية بالكامل." +
-                "\nيرجى عدم اعتبار التحويل مكتملًا حتى يتم التحقق منه." +
-                "\nالتفاصيل: " + error.message;
-
-              console.error(
-                "Completion error:",
-                error
-              );
-
-            } finally {
-
-              paymentInProgress = false;
-              sendButton.disabled = false;
-
-            }
-
-          },
-
-
-        // =================================
-        // إلغاء الدفع
-        // =================================
-
-        onCancel: function(paymentId) {
-
-          paymentResult.textContent =
-            "تم إلغاء عملية الدفع من قبل المستخدم.";
-
-          paymentInProgress = false;
-          sendButton.disabled = false;
-
-        },
-
-
-        // =================================
-        // خطأ أثناء الدفع
-        // =================================
-
-        onError: function(error, payment) {
-
-          paymentResult.textContent =
-            "حدث خطأ أثناء الدفع: " +
-            error.message;
-
-          console.error(
-            "Payment error:",
-            error,
-            payment
-          );
-
-          paymentInProgress = false;
-          sendButton.disabled = false;
-
-        }
-
-      });
-
-    } catch (error) {
-
-      paymentResult.textContent =
-        "فشل بدء عملية الدفع: " +
-        error.message;
-
-      paymentInProgress = false;
-      sendButton.disabled = false;
-
-    }
-
-  }
-);
 
 </script>
 

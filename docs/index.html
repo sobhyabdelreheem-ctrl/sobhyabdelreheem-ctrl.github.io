@@ -4,236 +4,77 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wallet Monitor & Transfer</title>
-
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: #f4f4f4;
-    }
-
-    main {
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      max-width: 600px;
-      margin: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      background-color: #007bff;
-      color: white;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    input[type="text"] {
-      width: 90%;
-      padding: 10px;
-      margin: 5px 0 15px 0;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-sizing: border-box;
-      text-align: left;
-      direction: ltr;
-    }
-
-    label {
-      display: block;
-      text-align: right;
-      font-weight: bold;
-      margin-right: 5%;
-      font-size: 14px;
-      color: #333;
-    }
-
-    #sendPi {
-      background-color: #7b1fa2;
-    }
-
-    #balanceResult, #result, #paymentResult, #a2uResult {
-      white-space: pre-line;
-      font-size: 15px;
-      line-height: 1.8;
-      overflow-wrap: anywhere;
-      margin-top: 15px;
-      padding: 10px;
-      background: #fafafa;
-      border-radius: 6px;
-      text-align: right;
-      direction: ltr;
-    }
-
-    hr {
-      margin: 20px 0;
-      border: 0;
-      border-top: 1px solid #ddd;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
+    main { background: white; padding: 24px; border-radius: 12px; max-width: 600px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    button { padding: 12px 20px; margin: 10px; font-size: 16px; cursor: pointer; border: none; border-radius: 8px; background-color: #007bff; color: white; }
+    input[type="text"] { width: 90%; padding: 10px; margin: 5px 0 15px 0; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; text-align: left; direction: ltr; }
+    label { display: block; text-align: right; font-weight: bold; margin-right: 5%; font-size: 14px; }
+    #serverCheckStatus, #a2uResult { font-size: 14px; padding: 10px; border-radius: 6px; margin-top: 10px; direction: ltr; }
+    .success-box { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .error-box { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
   </style>
 </head>
-
 <body>
 <main>
 
   <h2>Wallet Monitor & Transfer</h2>
-  <p>Pi Testnet Balance Monitor</p>
-  <p id="status" style="direction: rtl;">جاري تهيئة Pi SDK...</p>
-
-  <button id="login">تسجيل الدخول وطلب الصلاحيات</button>
-  <p id="result" style="direction: rtl;">لم يتم تسجيل الدخول بعد</p>
+  
+  <!-- 🔍 صندوق فحص حالة السيرفر وملف الـ Backend -->
+  <div id="serverCheckStatus" class="error-box">جاري فحص اتصال السيرفر والملفات...</div>
 
   <hr>
 
-  <!-- 🚀 لوحة إدخال وتأكيد المحافظ للتحويل المباشر A2U -->
-  <h3 style="color: #2e7d32; direction: rtl;">تأكيد وإرسال تحويل A2U مباشر</h3>
-  
-  <label for="senderWalletInput">محفظة المرسل (المطور):</label>
-  <input type="text" id="senderWalletInput" value="GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD" placeholder="أدخل محفظة المرسل" />
-
+  <h3 style="color: #2e7d32; direction: rtl;">تنفيذ تحويل A2U مباشر</h3>
   <label for="customWallet">المحفظة المستقبلة (المستلم):</label>
   <input type="text" id="customWallet" placeholder="أدخل محفظة المستلم (تبدأ بـ G)" />
-
-  <button id="sendA2U" style="background-color: #2e7d32;">إرسال 1 Pi (A2U) للمحفظة المؤكدة</button>
-  <p id="a2uResult">جاهز لتنفيذ التحويل...</p>
-
-  <hr>
-
-  <button id="checkBalance">فحص الرصيد الآن</button>
-  <p id="balanceResult">في انتظار الفحص...</p>
-
-  <hr>
-
-  <button id="sendPi">إرسال 1 Pi (U2A تقليدي)</button>
-  <p id="paymentResult">جاهز لعملية الدفع...</p>
-
-  <hr>
-
-  <h3 style="direction: rtl;">المحفظة المرسلة افتراضياً</h3>
-  <p id="oldWalletAddress" style="direction: ltr;"></p>
-  <p style="direction: rtl;">الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
-  <p style="direction: rtl;">الرصيد الحالي: <strong id="oldAfter">--</strong></p>
-  <p style="direction: rtl;">التغير: <strong id="oldChange">--</strong></p>
-
-  <hr>
-
-  <h3 style="direction: rtl;">المحفظة المستقبلة افتراضياً</h3>
-  <p id="targetWalletAddress" style="direction: ltr;"></p>
-  <p style="direction: rtl;">الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
-  <p style="direction: rtl;">الرصيد الحالي: <strong id="targetAfter">--</strong></p>
-  <p style="direction: rtl;">التغير: <strong id="targetChange">--</strong></p>
-
-  <button id="refreshWallets">تحديث أرصدة المحافظ</button>
+  <button id="sendA2U" style="background-color: #2e7d32;">إرسال 1 Pi (A2U)</button>
+  <p id="a2uResult" style="direction: ltr; background: #fafafa;">جاهز لتنفيذ التحويل...</p>
 
 </main>
 
 <script>
-
 const SERVER_URL = "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
-const TESTNET_HORIZON = "https://api.testnet.minepi.com";
-const balanceId = "00000000ab80ac73f8537778eeed00ee39159cf73f7cd26cf81136f7efc9974ad815b942";
-const oldWallet = "GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD";
-const targetWallet = "GBPZFCN5QDG5AM3M526DROXRKGT7SMXZP3BMRVMXYV42MGA5VGWIBMGC";
 
-const status = document.getElementById("status");
-const result = document.getElementById("result");
-const balanceResult = document.getElementById("balanceResult");
-const paymentResult = document.getElementById("paymentResult");
-const sendButton = document.getElementById("sendPi");
-
-let balancesBefore = { old: null, target: null };
-let balancesAfter = { old: null, target: null };
-let checking = false;
-let checkCount = 0;
-let paymentInProgress = false;
-let currentPiUser = null;
-
-try {
-  Pi.init({ version: "2.0", sandbox: true });
-  status.textContent = "Pi SDK initialized successfully.";
-} catch (error) {
-  status.textContent = "SDK initialization error: " + error.message;
-}
-
-async function handleLogin() {
-  result.textContent = "جاري تسجيل الدخول...";
+// 🚀 فحص تلقائي لحالة السيرفر عند فتح الصفحة
+async function checkServerFiles() {
+  const statusBox = document.getElementById("serverCheckStatus");
   try {
-    const auth = await Pi.authenticate(["username", "payments", "wallet_address"], function(payment) {
-      console.log("Incomplete payment:", payment);
-    });
-
-    currentPiUser = {
-      uid: auth.user.uid,
-      username: auth.user.username,
-      walletAddress: auth.user.wallet_address || "",
-      accessToken: auth.accessToken
-    };
-
-    result.textContent =
-      "تم تسجيل الدخول بنجاح" +
-      "\nالاسم: " + currentPiUser.username +
-      "\nUID: " + currentPiUser.uid +
-      "\nالمحفظة: " + (currentPiUser.walletAddress || "لم يصل عنوان المحفظة");
-
-    // إذا توفرت محفظة المستخدم تلقائياً، نضعها في حقل المستلم لتسهيل الأمر
-    if (auth.user.wallet_address) {
-      document.getElementById("customWallet").value = auth.user.wallet_address;
+    const res = await fetch(`${SERVER_URL}/check`);
+    const data = await res.json();
+    if (data.success) {
+      statusBox.className = "success-box";
+      statusBox.innerHTML = `✅ <b>Server File:</b> ${data.serverFile} | <b>Status:</b> ${data.status}`;
+    } else {
+      throw new Error("استجابة غير صالحة");
     }
-
-  } catch (error) {
-    currentPiUser = null;
-    result.textContent = "فشل تسجيل الدخول: " + error.message;
+  } catch (err) {
+    statusBox.className = "error-box";
+    statusBox.innerHTML = `❌ <b>خطأ:</b> تعذر الوصول لملف السيرفر (Not Found / Failed to fetch). تأكد من إعدادات Vercel.`;
   }
 }
 
-document.getElementById("login").addEventListener("click", handleLogin);
+// تنفيذ الفحص فور تحميل الصفحة
+checkServerFiles();
 
-// 🚀 زر تحويل A2U المباشر مع التحقق من الحقول
+// زر التحويل A2U
 document.getElementById("sendA2U").addEventListener("click", async () => {
-  const senderInput = document.getElementById("senderWalletInput").value.trim();
-  const receiverInput = document.getElementById("customWallet").value.trim();
+  const walletInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
 
-  if (!senderInput || senderInput.length < 56) {
-    alert("الرجاء التحقق من عنوان محفظة المرسل");
+  if (!walletInput || walletInput.length < 56) {
+    alert("الرجاء إدخال عنوان محفظة صحيح يبدأ بـ G");
     return;
   }
 
-  if (!receiverInput || receiverInput.length < 56) {
-    alert("الرجاء إدخال عنوان محفظة مستقبل صحيح يبدأ بـ G");
-    return;
-  }
-
-  a2uResult.textContent = "جاري إرسال 1 Pi (A2U) من المحددة إلى المستلم...";
+  a2uResult.textContent = "جاري إرسال 1 Pi (A2U)...";
 
   try {
     const response = await fetch(`${SERVER_URL}/transfer`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ 
-        wallet: receiverInput,
-        senderWallet: senderInput
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: walletInput })
     });
 
     const data = await response.json();
@@ -247,44 +88,6 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
     a2uResult.textContent = "❌ خطأ في الاتصال: " + err.message;
   }
 });
-
-document.getElementById("oldWalletAddress").textContent = oldWallet;
-document.getElementById("targetWalletAddress").textContent = targetWallet;
-
-async function getWalletBalance(walletAddress) {
-  const response = await fetch(TESTNET_HORIZON + "/accounts/" + encodeURIComponent(walletAddress));
-  if (response.status === 404) throw new Error("المحفظة غير موجودة على Testnet");
-  if (!response.ok) throw new Error("خطأ في قراءة المحفظة: HTTP " + response.status);
-  const account = await response.json();
-  const nativeBalance = account.balances.find(item => item.asset_type === "native");
-  return nativeBalance ? Number(nativeBalance.balance) : 0;
-}
-
-function formatPi(value) {
-  return Number(value).toFixed(7) + " Test-Pi";
-}
-
-async function refreshWalletBalances() {
-  const oldBalance = await getWalletBalance(oldWallet);
-  const targetBalance = await getWalletBalance(targetWallet);
-  document.getElementById("oldAfter").textContent = formatPi(oldBalance);
-  document.getElementById("targetAfter").textContent = formatPi(targetBalance);
-  return { old: oldBalance, target: targetBalance };
-}
-
-document.getElementById("refreshWallets").addEventListener("click", async function() {
-  try {
-    await refreshWalletBalances();
-    paymentResult.textContent = "تم تحديث أرصدة المحافظ بنجاح.";
-  } catch (error) {
-    alert("تعذر قراءة الأرصدة: " + error.message);
-  }
-});
-
-refreshWalletBalances().catch(error => {
-  console.error("Wallet balance error:", error);
-});
-
 </script>
 
 </body>

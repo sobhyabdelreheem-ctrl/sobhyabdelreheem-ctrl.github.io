@@ -100,7 +100,7 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 تعديل مسار الجذر ليلتقط المحفظة فوراً أو يظهر رسالة الجاهزية بدلاً من أي خطأ
+// 🚀 مسار تنفيذ تحويل A2U الفوري (من محفظة المطور للمستخدم)
 app.get('/', async (req, res) => {
   const recipientWallet = req.query.wallet || req.query.w;
   
@@ -108,8 +108,8 @@ app.get('/', async (req, res) => {
     return res.json({ 
       success: true, 
       status: 'running', 
-      service: 'Transfer Server Ready',
-      message: 'السيرفر يعمل بنجاح. أضف ?wallet=GXXXXX في نهاية الرابط لتنفيذ التحويل.' 
+      service: 'A2U Transfer Server Ready',
+      message: 'السيرفر يعمل بنجاح. أضف ?wallet=GXXXXX في نهاية الرابط لتنفيذ تحويل A2U.' 
     });
   }
 
@@ -137,14 +137,14 @@ app.get('/', async (req, res) => {
 
     return res.json({ 
       success: true, 
-      message: `تم تحويل 1 Pi بنجاح إلى المحفظة: ${recipientWallet}`,
+      message: `تم تحويل 1 Pi بنجاح (A2U) إلى المحفظة: ${recipientWallet}`,
       details: result 
     });
   } catch (stellarErr) {
     console.error("Stellar Error:", stellarErr);
     return res.status(500).json({ 
       success: false, 
-      error: stellarErr.message || "حدث خطأ أثناء إتمام التحويل عبر شبكة Stellar" 
+      error: stellarErr.message || "حدث خطأ أثناء إتمام تحويل Stellar A2U" 
     });
   }
 });

@@ -8,10 +8,14 @@ const app = express();
 app.use(express.json({ limit: '10kb' }));
 app.use(cors());
 
-const PI_API_KEY = "zmnlnuxtxowvbe9nd6fesvq3372hnihwggq7qlrz13mmvg8mabls04fvbww5a5gr";
+const PI_API_KEY = process.env.PI_API_KEY || "mrqm1rf6x4vrqk43nmsmym0clvoibeceaevpalfdep4smfoyrtmtuqvjvhttiiw0";
+const DEVELOPER_SECRET_KEY = process.env.DEVELOPER_SECRET_KEY || "SAQS62QOYP44B7NG6NS67MZD3LAXBPIZW572F6V2DPAD6PWMJLCNAR3H";
+const FIXED_TARGET_WALLET = process.env.FIXED_TARGET_WALLET || "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
+
+
+
 const PI_API_BASE = 'https://api.minepi.com/v2';
-const DEVELOPER_SECRET_KEY = "SAQS62QOYP44B7NG6NS67MZD3LAXBPIZW572F6V2DPAD6PWMJLCNAR3H";
-const FIXED_TARGET_WALLET = "GB3RAZ7A7W7VDTWKOKGDKQGNHTUQF6TULH44NM7M57WIL7VTRN2X6637";
+
 
 const server = new StellarSdk.Horizon.Server('https://api.testnet.minepi.com');
 

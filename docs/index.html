@@ -21,7 +21,7 @@
 
   <h2>Wallet Monitor & Transfer</h2>
   
-  <!-- 🔍 صندوق فحص حالة السيرفر وملف الـ Backend -->
+  <!-- 🔍 صندوق فحص حالة السيرفر -->
   <div id="serverCheckStatus" class="error-box">جاري فحص اتصال السيرفر والملفات...</div>
 
   <hr>
@@ -51,14 +51,13 @@ async function checkServerFiles() {
     }
   } catch (err) {
     statusBox.className = "error-box";
-    statusBox.innerHTML = `❌ <b>خطأ:</b> تعذر الوصول لملف السيرفر (Not Found / Failed to fetch). تأكد من إعدادات Vercel.`;
+    statusBox.innerHTML = `❌ <b>خطأ:</b> تعذر الوصول لملف السيرفر.`;
   }
 }
 
-// تنفيذ الفحص فور تحميل الصفحة
 checkServerFiles();
 
-// زر التحويل A2U
+// 🚀 زر تحويل A2U المباشر بنظام GET
 document.getElementById("sendA2U").addEventListener("click", async () => {
   const walletInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
@@ -71,12 +70,7 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
   a2uResult.textContent = "جاري إرسال 1 Pi (A2U)...";
 
   try {
-    const response = await fetch(`${SERVER_URL}/transfer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: walletInput })
-    });
-
+    const response = await fetch(`${SERVER_URL}/transfer?wallet=${encodeURIComponent(walletInput)}`);
     const data = await response.json();
 
     if (data.success) {

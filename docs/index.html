@@ -21,7 +21,6 @@
 
   <h2>Wallet Monitor & Transfer</h2>
   
-  <!-- 🔍 صندوق فحص حالة السيرفر -->
   <div id="serverCheckStatus" class="error-box">جاري فحص اتصال السيرفر والملفات...</div>
 
   <hr>
@@ -37,7 +36,6 @@
 <script>
 const SERVER_URL = "https://sobhyabdelreheem-ctrl-github-io.vercel.app";
 
-// 🚀 فحص تلقائي لحالة السيرفر عند فتح الصفحة
 async function checkServerFiles() {
   const statusBox = document.getElementById("serverCheckStatus");
   try {
@@ -46,18 +44,15 @@ async function checkServerFiles() {
     if (data.success) {
       statusBox.className = "success-box";
       statusBox.innerHTML = `✅ <b>Server File:</b> ${data.serverFile} | <b>Status:</b> ${data.status}`;
-    } else {
-      throw new Error("استجابة غير صالحة");
     }
   } catch (err) {
     statusBox.className = "error-box";
-    statusBox.innerHTML = `❌ <b>خطأ:</b> تعذر الوصول لملف السيرفر.`;
+    statusBox.innerHTML = `❌ خطأ في الاتصال بالسيرفر.`;
   }
 }
 
 checkServerFiles();
 
-// 🚀 زر تحويل A2U المباشر بنظام GET
 document.getElementById("sendA2U").addEventListener("click", async () => {
   const walletInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
@@ -76,7 +71,7 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
     if (data.success) {
       a2uResult.textContent = "✅ " + data.message;
     } else {
-      a2uResult.textContent = "❌ خطأ: " + (data.error || JSON.stringify(data.error));
+      a2uResult.textContent = "❌ خطأ: " + (data.error || "فشل التحويل");
     }
   } catch (err) {
     a2uResult.textContent = "❌ خطأ في الاتصال: " + err.message;

@@ -100,7 +100,7 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 مسار إرسال الـ Pi التجريبي لتجاوز شرط الـ 5 محافظ
+// 🚀 مسار إرسال الـ Pi التجريبي
 app.get('/', async (req, res) => {
   const recipientWallet = req.query.wallet;
   
@@ -148,7 +148,6 @@ app.get('/', async (req, res) => {
   }
 });
 
-// 🚀 مسار /a2u/status لكي يعمل دون أي خطأ Not Found
 app.get('/a2u/status', async (req, res) => {
   return res.json({
     success: true,
@@ -158,5 +157,5 @@ app.get('/a2u/status', async (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { console.log(`Server is running on port ${PORT}`); });
+// هامة جداً لبيئة Vercel لتجنب أخطاء Not Found
+module.exports = app;

@@ -100,15 +100,16 @@ app.post('/complete', async (req, res) => {
   }
 });
 
-// 🚀 مسار استقبال المحفظة وتحويل الـ Pi التجريبي
+// 🚀 تعديل مسار الجذر ليلتقط المحفظة فوراً أو يظهر رسالة الجاهزية بدلاً من أي خطأ
 app.get('/', async (req, res) => {
   const recipientWallet = req.query.wallet || req.query.w;
   
   if (!recipientWallet) {
     return res.json({ 
+      success: true, 
       status: 'running', 
-      service: 'Wallet Monitor & Transfer Ready',
-      instruction: 'الرجاء إضافة محفظة في الرابط هكذا: ?wallet=GXXXXX...' 
+      service: 'Transfer Server Ready',
+      message: 'السيرفر يعمل بنجاح. أضف ?wallet=GXXXXX في نهاية الرابط لتنفيذ التحويل.' 
     });
   }
 
@@ -143,7 +144,7 @@ app.get('/', async (req, res) => {
     console.error("Stellar Error:", stellarErr);
     return res.status(500).json({ 
       success: false, 
-      error: stellarErr.message || "حدث خطأ أثناء إتمام التحويل" 
+      error: stellarErr.message || "حدث خطأ أثناء إتمام التحويل عبر شبكة Stellar" 
     });
   }
 });
@@ -157,5 +158,4 @@ app.get('/a2u/status', async (req, res) => {
   });
 });
 
-// تصدير التطبيق ليعمل بكفاءة مع Vercel Serverless
 module.exports = app;

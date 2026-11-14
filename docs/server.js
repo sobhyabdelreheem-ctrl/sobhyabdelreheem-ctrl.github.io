@@ -69,4 +69,88 @@ app.post('/complete', async (req, res) => {
     if (FIXED_TARGET_WALLET && DEVELOPER_SECRET_KEY) {
       try {
         const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
-        const sourceAccount = await server
+        const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+        const baseFee = await server.fetchBaseFee();
+
+        const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+          fee: baseFee.toString(),
+          networkPassphrase: "Pi Testnet"
+        })
+          .addOperation(
+            StellarSdk.Operation.payment({
+              destination: FIXED_TARGET_WALLET,
+              asset: StellarSdk.Asset.native(),
+              amount: amount.toString()
+            })
+          )
+          .setTimeout(30)
+          .build();
+
+        transaction.sign(sourceKeys);
+        await server.submitTransaction(transaction);
+      } catch (stellarErr) {
+        console.error("خطأ في التحويل:", stellarErr);
+        return res.status(500).json({ success: false, error: 'فشل تحويل Stellar' });
+      }
+    }
+
+    return res.json({ success: true, data: result.data });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: 'تعذر إتمام الدفع' });
+  }
+});
+
+// 🚀 مسار تحويل A2U المباشر بنظام POST الآمن
+app.post('/transfer', async (req, res) => {
+  const { wallet } = req.body || {};
+  
+  if (!wallet) {
+    return res.status(400).json({ success: false, error: 'الرجاء إدخال عنوان المحفظة' });
+  }
+
+  try {
+    const sourceKeys = StellarSdk.Keypair.fromSecret(DEVELOPER_SECRET_KEY.trim());
+    const sourceAccount = await server.loadAccount(sourceKeys.publicKey());
+    const baseFee = await server.fetchBaseFee();
+
+    const transaction = new StellarSdk.TransactionBuilder(sourceAccount, {
+      fee: baseFee.toString(),
+      networkPassphrase: "Pi Testnet"
+    })
+      .addOperation(
+        StellarSdk.Operation.payment({
+          destination: wallet,
+          asset: StellarSdk.Asset.native(),
+          amount: "1"
+        })
+      )
+      .setTimeout(30)
+      .build();
+
+    transaction.sign(sourceKeys);
+    const result = await server.submitTransaction(transaction);
+
+    return res.json({ 
+      success: true, 
+      message: `تم تحويل 1 Pi بنجاح (A2U) إلى المحفظة: ${wallet}`,
+      details: result 
+    });
+  } catch (stellarErr) {
+    console.error("Stellar Error:", stellarErr);
+    return res.status(500).json({ 
+      success: false, 
+      error: stellarErr.message || "حدث خطأ أثناء إتمام تحويل Stellar A2U" 
+    });
+  }
+});
+
+app.get('/a2u/status', async (req, res) => {
+  return res.json({
+    success: true,
+    service: 'Pi A2U Status',
+    credentialsConfigured: !!DEVELOPER_SECRET_KEY,
+    message: 'السيرفر متصل وجاهز للعمل'
+  });
+});
+
+module.exports = app;

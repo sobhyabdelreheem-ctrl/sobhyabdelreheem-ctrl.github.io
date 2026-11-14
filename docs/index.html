@@ -45,23 +45,42 @@
       cursor: not-allowed;
     }
 
+    input[type="text"] {
+      width: 90%;
+      padding: 10px;
+      margin: 5px 0 15px 0;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      text-align: left;
+      direction: ltr;
+    }
+
+    label {
+      display: block;
+      text-align: right;
+      font-weight: bold;
+      margin-right: 5%;
+      font-size: 14px;
+      color: #333;
+    }
+
     #sendPi {
       background-color: #7b1fa2;
     }
 
-    #sendPi:hover {
-      background-color: #4a148c;
-    }
-
     #balanceResult, #result, #paymentResult, #a2uResult {
       white-space: pre-line;
-      font-size: 16px;
+      font-size: 15px;
       line-height: 1.8;
       overflow-wrap: anywhere;
       margin-top: 15px;
       padding: 10px;
       background: #fafafa;
       border-radius: 6px;
+      text-align: right;
+      direction: ltr;
     }
 
     hr {
@@ -77,18 +96,23 @@
 
   <h2>Wallet Monitor & Transfer</h2>
   <p>Pi Testnet Balance Monitor</p>
-  <p id="status">جاري تهيئة Pi SDK...</p>
+  <p id="status" style="direction: rtl;">جاري تهيئة Pi SDK...</p>
 
   <button id="login">تسجيل الدخول وطلب الصلاحيات</button>
-  <p id="result">لم يتم تسجيل الدخول بعد</p>
+  <p id="result" style="direction: rtl;">لم يتم تسجيل الدخول بعد</p>
 
   <hr>
 
-  <!-- 🚀 قسم تحويل A2U المباشر -->
-  <h3 style="color: #2e7d32;">تنفيذ تحويل A2U مباشر</h3>
-  <input type="text" id="customWallet" placeholder="أدخل محفظة المستلم (تبدأ بـ G)" style="width: 90%; padding: 10px; margin-bottom: 10px; font-size: 14px; box-sizing: border-box;" />
-  <br>
-  <button id="sendA2U" style="background-color: #2e7d32;">إرسال 1 Pi (A2U) للمحفظة</button>
+  <!-- 🚀 لوحة إدخال وتأكيد المحافظ للتحويل المباشر A2U -->
+  <h3 style="color: #2e7d32; direction: rtl;">تأكيد وإرسال تحويل A2U مباشر</h3>
+  
+  <label for="senderWalletInput">محفظة المرسل (المطور):</label>
+  <input type="text" id="senderWalletInput" value="GDTNZX26BAROLSLYPMR6ROWJE362IAIIRBCFXHJQLIPSAPV4BPZQL4JD" placeholder="أدخل محفظة المرسل" />
+
+  <label for="customWallet">المحفظة المستقبلة (المستلم):</label>
+  <input type="text" id="customWallet" placeholder="أدخل محفظة المستلم (تبدأ بـ G)" />
+
+  <button id="sendA2U" style="background-color: #2e7d32;">إرسال 1 Pi (A2U) للمحفظة المؤكدة</button>
   <p id="a2uResult">جاهز لتنفيذ التحويل...</p>
 
   <hr>
@@ -103,19 +127,19 @@
 
   <hr>
 
-  <h3>المحفظة المرسلة</h3>
-  <p id="oldWalletAddress"></p>
-  <p>الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
-  <p>الرصيد الحالي: <strong id="oldAfter">--</strong></p>
-  <p>التغير: <strong id="oldChange">--</strong></p>
+  <h3 style="direction: rtl;">المحفظة المرسلة افتراضياً</h3>
+  <p id="oldWalletAddress" style="direction: ltr;"></p>
+  <p style="direction: rtl;">الرصيد قبل التحويل: <strong id="oldBefore">--</strong></p>
+  <p style="direction: rtl;">الرصيد الحالي: <strong id="oldAfter">--</strong></p>
+  <p style="direction: rtl;">التغير: <strong id="oldChange">--</strong></p>
 
   <hr>
 
-  <h3>المحفظة المستقبلة</h3>
-  <p id="targetWalletAddress"></p>
-  <p>الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
-  <p>الرصيد الحالي: <strong id="targetAfter">--</strong></p>
-  <p>التغير: <strong id="targetChange">--</strong></p>
+  <h3 style="direction: rtl;">المحفظة المستقبلة افتراضياً</h3>
+  <p id="targetWalletAddress" style="direction: ltr;"></p>
+  <p style="direction: rtl;">الرصيد قبل التحويل: <strong id="targetBefore">--</strong></p>
+  <p style="direction: rtl;">الرصيد الحالي: <strong id="targetAfter">--</strong></p>
+  <p style="direction: rtl;">التغير: <strong id="targetChange">--</strong></p>
 
   <button id="refreshWallets">تحديث أرصدة المحافظ</button>
 
@@ -169,6 +193,11 @@ async function handleLogin() {
       "\nUID: " + currentPiUser.uid +
       "\nالمحفظة: " + (currentPiUser.walletAddress || "لم يصل عنوان المحفظة");
 
+    // إذا توفرت محفظة المستخدم تلقائياً، نضعها في حقل المستلم لتسهيل الأمر
+    if (auth.user.wallet_address) {
+      document.getElementById("customWallet").value = auth.user.wallet_address;
+    }
+
   } catch (error) {
     currentPiUser = null;
     result.textContent = "فشل تسجيل الدخول: " + error.message;
@@ -177,17 +206,23 @@ async function handleLogin() {
 
 document.getElementById("login").addEventListener("click", handleLogin);
 
-// 🚀 زر تحويل A2U المباشر بنظام POST
+// 🚀 زر تحويل A2U المباشر مع التحقق من الحقول
 document.getElementById("sendA2U").addEventListener("click", async () => {
-  const walletInput = document.getElementById("customWallet").value.trim();
+  const senderInput = document.getElementById("senderWalletInput").value.trim();
+  const receiverInput = document.getElementById("customWallet").value.trim();
   const a2uResult = document.getElementById("a2uResult");
 
-  if (!walletInput || walletInput.length < 56) {
-    alert("الرجاء إدخال عنوان محفظة صحيح يبدأ بـ G ويحتوي على 56 حرفاً");
+  if (!senderInput || senderInput.length < 56) {
+    alert("الرجاء التحقق من عنوان محفظة المرسل");
     return;
   }
 
-  a2uResult.textContent = "جاري إرسال 1 Pi (A2U) إلى المحفظة...";
+  if (!receiverInput || receiverInput.length < 56) {
+    alert("الرجاء إدخال عنوان محفظة مستقبل صحيح يبدأ بـ G");
+    return;
+  }
+
+  a2uResult.textContent = "جاري إرسال 1 Pi (A2U) من المحددة إلى المستلم...";
 
   try {
     const response = await fetch(`${SERVER_URL}/transfer`, {
@@ -195,7 +230,10 @@ document.getElementById("sendA2U").addEventListener("click", async () => {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ wallet: walletInput })
+      body: JSON.stringify({ 
+        wallet: receiverInput,
+        senderWallet: senderInput
+      })
     });
 
     const data = await response.json();
